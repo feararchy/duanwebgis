@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - WebGIS</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+    <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+        <div class="card shadow border-0 p-4" style="width: 400px; border-radius: 15px;">
+            <div class="text-center mb-4">
+                <i class="bi bi-person-circle fs-1 text-primary"></i>
+                <h3 class="fw-bold mt-2">Đăng Nhập</h3>
+            </div>
+            
+            {% if error_message %}
+                <div class="alert alert-danger text-center">{{ error_message }}</div>
+            {% endif %}
+
+            {% if 'logout' in request.GET %}
+                <div class="alert alert-success text-center">Đã đăng xuất thành công.</div>
+            {% endif %}
+
+            <form action="{% url 'login' %}" method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tài khoản</label>
+                    <input type="text" name="username" class="form-control py-2" placeholder="Nhập username..." required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mật khẩu</label>
+                    <input type="password" name="password" class="form-control py-2" placeholder="Nhập password..." required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">ĐĂNG NHẬP</button>
+            </form>
+            
+            <div class="mt-4 p-3 bg-white rounded border text-center small text-muted">
+                <p class="mb-1 fw-bold">Tài khoản dùng thử:</p>
+                <div>Khách: <b>user / 123456</b></div>
+                <div>Admin: <b>admin / 123456</b></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

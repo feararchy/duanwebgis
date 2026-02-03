@@ -1,0 +1,63 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h3>{% if product.id %}Cập nhật{% else %}Thêm{% endif %} Sản Phẩm</h3>
+        
+        <form action="{% url 'product_save' %}" method="post" class="card p-4 shadow-sm border-0 mt-3">
+            
+            {% csrf_token %}
+
+            <input type="hidden" name="id" value="{{ product.id|default:'' }}">
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Tên Sản Phẩm</label>
+                <input type="text" name="name" value="{{ product.name|default:'' }}" class="form-control" required>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Mô tả chi tiết</label>
+                <textarea name="description" class="form-control" rows="3">{{ product.description|default:'' }}</textarea>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Giá bán</label>
+                    <input type="number" name="price" value="{{ product.price|default:'' }}" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Đơn vị tính (m3, kg, viên...)</label>
+                    <input type="text" name="unit" value="{{ product.unit|default:'' }}" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Link Ảnh (URL)</label>
+                <input type="text" name="image_url" value="{{ product.image_url|default:'' }}" class="form-control" placeholder="https://...">
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Số lượng trong kho</label>
+                    <input type="number" name="stock_quantity" value="{{ product.stock_quantity|default:'' }}" class="form-control">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Danh Mục</label>
+                    <select name="category_id" class="form-select">
+                        {% for c in categories %}
+                            <option value="{{ c.id }}" 
+                                    {% if product.category_id == c.id %}selected{% endif %}>
+                                {{ c.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-success py-2 fw-bold">LƯU SẢN PHẨM</button>
+            <a href="{% url 'products' %}" class="btn btn-secondary py-2 ms-2">Hủy bỏ</a>
+        </form>
+    </div>
+{% endblock %}

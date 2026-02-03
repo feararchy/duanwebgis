@@ -1,0 +1,84 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% load humanize %} {% block content %}
+    <div class="container mt-4">
+        <h2 class="mb-4 fw-bold">Giỏ hàng của bạn</h2>
+        
+        <div class="row">
+            <div class="col-md-8">
+                {% if cart_items %}
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Đơn giá</th>
+                                    <th>SL</th>
+                                    <th>Thành tiền</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.product.image_url|default:'https://via.placeholder.com/50' }}" 
+                                                 width="50" height="50" class="rounded me-2">
+                                            <span class="fw-bold">{{ item.product.name }}</span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td>{{ item.product.price|intcomma }} đ</td>
+                                    
+                                    <td>{{ item.quantity }}</td>
+                                    
+                                    <td class="text-danger fw-bold">
+                                        {% widthratio item.product.price 1 item.quantity %}000 đ
+                                        </td>
+                                    
+                                    <td>
+                                        <form action="{% url 'cart_remove' %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_id" value="{{ item.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center py-5">
+                    <i class="bi bi-cart-x fs-1 d-block mb-3"></i>
+                    <h4>Giỏ hàng đang trống</h4>
+                    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Tiếp tục mua sắm</a>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if cart_items %}
+            <div class="col-md-4">
+                <div class="card p-4 shadow-sm border-0 bg-light">
+                    <h4 class="fw-bold">Tổng thanh toán</h4>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Tạm tính:</span>
+                        <span class="fw-bold fs-5 text-danger">{{ total_price|intcomma }} đ</span>
+                    </div>
+
+                    <form action="{% url 'checkout' %}" method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-dark w-100 py-3 fw-bold fs-5">THANH TOÁN NGAY</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

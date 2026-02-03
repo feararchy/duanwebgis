@@ -1,0 +1,55 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h3>Danh Sách Khách Hàng</h3>
+        
+        <div class="card shadow-sm mt-3 border-0">
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Username</th>
+                            <th>Họ tên</th>
+                            <th>Vai trò</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.username }}</td>
+                            <td class="fw-bold">{{ u.full_name }}</td>
+                            
+                            <td>
+                                {% if u.role == 'ROLE_ADMIN' %}
+                                    <span class="badge bg-primary">ADMIN</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">USER</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if u.role != 'ROLE_ADMIN' %}
+                                    <a href="{% url 'user_delete' u.id %}" 
+                                       class="btn btn-sm btn-danger" 
+                                       onclick="return confirm('Bạn có chắc muốn xóa tài khoản {{ u.username }}?')">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center">Chưa có người dùng nào.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+{% endblock %}

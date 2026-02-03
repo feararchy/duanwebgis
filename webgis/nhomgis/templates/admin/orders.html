@@ -1,0 +1,62 @@
+{% extends 'layout.html' %}
+
+{% load humanize %} 
+
+{% block content %}
+    <div class="container mt-4">
+        <h3 class="mb-4">Quản lý Hóa Đơn</h3>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <table class="table table-bordered mb-0 align-middle">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>ID</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Cập nhật</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in orders %}
+                        <tr>
+                            <td>{{ o.id }}</td>
+                            <td class="fw-bold">{{ o.user.fullName }}</td>
+                            <td>{{ o.orderDate|date:"d/m/Y H:i" }}</td>
+                            
+                            <td class="text-danger fw-bold">
+                                {{ o.totalAmount|intcomma }} đ
+                            </td>
+
+                            <td>
+                                {% if o.status == 'CHỜ XÁC NHẬN' %}
+                                    <span class="badge bg-warning text-dark">CHỜ XÁC NHẬN</span>
+                                {% elif o.status == 'ĐANG GIAO' %}
+                                    <span class="badge bg-primary">ĐANG GIAO</span>
+                                {% elif o.status == 'ĐÃ GIAO' %}
+                                    <span class="badge bg-success">ĐÃ GIAO</span>
+                                {% elif o.status == 'ĐÃ HỦY' %}
+                                    <span class="badge bg-danger">ĐÃ HỦY</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <form action="/admin/orders/status" method="post" class="d-flex gap-2">
+                                    {% csrf_token %} <input type="hidden" name="id" value="{{ o.id }}">
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option value="ĐANG GIAO">ĐANG GIAO</option>
+                                        <option value="ĐÃ GIAO">ĐÃ GIAO</option>
+                                        <option value="ĐÃ HỦY">ĐÃ HỦY</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %} </tbody>
+                </table>
+            </div>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">Quay lại</a>
+    </div>
+{% endblock %}

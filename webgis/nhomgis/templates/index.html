@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% load humanize %} {% block content %}
+    <div class="container">
+        <div class="p-5 mb-4 bg-light rounded-3 shadow-sm text-center" 
+             style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80') center/cover;">
+            <div class="container-fluid py-5 text-white">
+                <h1 class="display-5 fw-bold">KINGMATE SHOP</h1>
+                <p class="fs-4">Chuyên Cát, Đá, Xi măng, Sắt thép chất lượng cao</p>
+                <a href="#products" class="btn btn-warning btn-lg fw-bold">Mua Ngay</a>
+            </div>
+        </div>
+
+        <h3 id="products" class="mb-4 border-start border-4 border-warning ps-3">Sản phẩm nổi bật</h3>
+        
+        <div class="row g-4">
+            {% for p in products %}
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm border-0">
+                    <a href="{% url 'product_detail' p.id %}">
+                        <img src="{{ p.image_url|default:'https://via.placeholder.com/300' }}" class="card-img-top" alt="{{ p.name }}">
+                    </a>
+                    
+                    <div class="card-body">
+                        <h5 class="card-title text-truncate">{{ p.name }}</h5>
+                        
+                        <p class="text-muted small">
+                            {{ p.category.name|default:"Vật liệu xây dựng" }}
+                        </p>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-danger fw-bold fs-5">
+                                {{ p.price|intcomma }} đ
+                            </span>
+                            
+                            <span class="badge bg-secondary">{{ p.unit }}</span>
+                        </div>
+                        
+                        <a href="{% url 'product_detail' p.id %}" class="btn btn-outline-dark w-100 mt-3">
+                            Xem Chi Tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p>Hiện chưa có sản phẩm nào.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% endblock %}
