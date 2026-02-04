@@ -1,6 +1,8 @@
 {% extends 'layout.html' %}
 {% load static %}
-{% load humanize %} {% block content %}
+{% load humanize %} 
+
+{% block content %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3>Danh sách Sản Phẩm</h3>
@@ -18,35 +20,49 @@
                             <th>Ảnh</th>
                             <th>Tên SP</th>
                             <th>Giá</th>
-                            <th>Kho</th>
-                            <th>Hành động</th>
+                            <th>Tồn kho</th>
+                            <th>Đơn vị</th>
+                            <th class="text-center">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for p in products %}
                         <tr>
                             <td>{{ p.id }}</td>
+                            
                             <td>
-                                <img src="{{ p.image_url|default:'https://via.placeholder.com/50' }}" 
-                                     width="50" height="50" class="rounded border" 
-                                     alt="{{ p.name }}">
+                                <img src="{{ p.image_url }}" 
+                                     width="50" height="50" 
+                                     class="rounded border" 
+                                     style="object-fit: cover;"
+                                     alt="{{ p.name }}"
+                                     onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
                             </td>
+
                             <td class="fw-bold">{{ p.name }}</td>
                             
-                            <td>{{ p.price|intcomma }} đ</td>
+                            <td class="text-success fw-bold">{{ p.price|intcomma }} đ</td>
                             
                             <td>{{ p.stock_quantity }}</td>
-                            <td>
+                            <td>{{ p.unit }}</td>
+
+                            <td class="text-center">
+                                <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-warning me-2" title="Sửa">
+                                    <i class="bi bi-pencil-square"></i> Sửa
+                                </a>
+
                                 <a href="{% url 'product_delete' p.id %}" 
                                    class="btn btn-sm btn-danger" 
-                                   onclick="return confirm('Bạn chắc chắn muốn xóa sản phẩm này?')">
+                                   onclick="return confirm('Bạn chắc chắn muốn xóa sản phẩm: {{ p.name }}?')"
+                                   title="Xóa">
                                     <i class="bi bi-trash"></i> Xóa
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="bi bi-box-seam display-4 d-block mb-2"></i>
                                     Chưa có sản phẩm nào. Hãy thêm mới!
                                 </td>
                             </tr>
@@ -57,7 +73,7 @@
         </div>
         
         <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">
-            <i class="bi bi-arrow-left"></i> Quay lại
+            <i class="bi bi-arrow-left"></i> Quay lại Dashboard
         </a>
     </div>
 {% endblock %}

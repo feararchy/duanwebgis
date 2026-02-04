@@ -1,35 +1,21 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from .models import Product, Category, Order, OrderItem, Warehouse
 
 # ==========================================
-# PHẦN 1: PUBLIC (KHÁCH HÀNG)
+# 1. PUBLIC (KHÁCH HÀNG)
 # ==========================================
 
 def home(request):
-    # Dữ liệu giả lập sản phẩm
-    mock_products = [
-        {'id': 1, 'name': 'Xi măng Hà Tiên', 'category': {'name': 'Xi măng'}, 'price': 85000, 'unit': 'Bao', 'image_url': 'https://vlxdhiepha.com/wp-content/uploads/2024/02/gia-xi-mang-ha-tien-1.jpg'},
-        {'id': 2, 'name': 'Cát xây tô (Cát đen)', 'category': {'name': 'Cát đá'}, 'price': 180000, 'unit': 'm3', 'image_url': 'https://vatlieuxaydung360.com/wp-content/uploads/2021/11/cat-xay-to.jpg'},
-        {'id': 3, 'name': 'Gạch ống Tuynel', 'category': {'name': 'Gạch xây'}, 'price': 1200, 'unit': 'Viên', 'image_url': 'https://vatlieuxaydung24h.vn/upload/sanpham/gach-ong-tuynel-binh-duong-thanh-tam-8x8x18.jpg'},
-        {'id': 4, 'name': 'Thép Pomina phi 10', 'category': {'name': 'Sắt thép'}, 'price': 78000, 'unit': 'Cây', 'image_url': 'https://satthepmanhphat.com/wp-content/uploads/2021/04/thep-pomina-2.jpg'},
-    ]
-    return render(request, 'index.html', {'products': mock_products})
+    # Lấy sản phẩm từ Database thật, sắp xếp mới nhất lên đầu
+    products = Product.objects.all().order_by('-id')
+    return render(request, 'index.html', {'products': products})
 
 def product_detail(request, id):
-    # Giả lập 1 sản phẩm chi tiết
-    product = {
-        'id': id,
-        'name': 'Xi măng Hà Tiên (Demo)',
-        'price': 85000,
-        'description': 'Xi măng đa dụng chất lượng cao, phù hợp cho mọi công trình...',
-        'unit': 'Bao',
-        'stock_quantity': 100,
-        'image_url': 'https://vlxdhiepha.com/wp-content/uploads/2024/02/gia-xi-mang-ha-tien-1.jpg',
-        'category': {'name': 'Xi măng'}
-    }
+    product = get_object_or_404(Product, id=id)
     return render(request, 'product-detail.html', {'product': product})
 
-# --- Login / Logout ---
 def login_view(request):
     if request.method == 'POST':
         u = request.POST.get('username')
@@ -47,117 +33,209 @@ def logout_view(request):
     logout(request)
     return redirect('/login/?logout')
 
-# --- Giỏ hàng ---
+# --- GIỎ HÀNG (SESSION) ---
 def cart_view(request):
-    mock_items = [
-        {'id': 1, 'product': {'name': 'Gạch men', 'price': 150000, 'image_url': ''}, 'quantity': 2},
-        {'id': 2, 'product': {'name': 'Xi măng', 'price': 85000, 'image_url': ''}, 'quantity': 5}
-    ]
-    # Tính tổng tiền
-    total = sum(item['product']['price'] * item['quantity'] for item in mock_items)
-    return render(request, 'cart.html', {'cart_items': mock_items, 'total_price': total})
+    cart = request.session.get('cart', {}) 
+    cart_items = []
+    total_price = 0
+    
+    for product_id, quantity in cart.items():
+        try:
+            product = Product.objects.get(id=product_id)
+            total = product.price * quantity
+            total_price += total
+            cart_items.append({
+                'product': product,
+                'quantity': quantity,
+                'total': total
+            })
+        except Product.DoesNotExist:
+            continue
+
+    return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
 
 def cart_add(request):
     if request.method == 'POST':
-        # Logic thêm vào giỏ hàng (Session) sẽ viết ở đây
-        print(f"Thêm SP {request.POST.get('product_id')} - SL: {request.POST.get('quantity')}")
+        p_id = request.POST.get('product_id')
+        qty = int(request.POST.get('quantity', 1))
+        cart = request.session.get('cart', {})
+        
+        if p_id in cart:
+            cart[p_id] += qty 
+        else:
+            cart[p_id] = qty  
+            
+        request.session['cart'] = cart 
         return redirect('cart')
     return redirect('home')
 
 def cart_remove(request):
     if request.method == 'POST':
-        print(f"Xóa Item ID: {request.POST.get('item_id')}")
-        return redirect('cart')
+        p_id = request.POST.get('product_id')
+        cart = request.session.get('cart', {})
+        if p_id in cart:
+            del cart[p_id]
+            request.session['cart'] = cart
     return redirect('cart')
 
+@login_required(login_url='/login/')
 def checkout(request):
-    print("Xử lý thanh toán...")
-    return redirect('home')
+    if request.method == 'POST':
+        address = request.POST.get('address', 'Địa chỉ mặc định')
+        lat = request.POST.get('lat')
+        lon = request.POST.get('lon')
+        
+        # 1. Tạo đơn hàng
+        new_order = Order.objects.create(
+            user=request.user,
+            shipping_address=address,
+            customer_lat=float(lat) if lat else None,
+            customer_lon=float(lon) if lon else None,
+            status='CHỜ XÁC NHẬN'
+        )
+        
+        # 2. Lưu chi tiết
+        cart = request.session.get('cart', {})
+        total = 0
+        for p_id, qty in cart.items():
+            prod = Product.objects.get(id=p_id)
+            OrderItem.objects.create(
+                order=new_order,
+                product=prod,
+                quantity=qty,
+                price_at_purchase=prod.price
+            )
+            total += prod.price * qty
+            
+        new_order.total_amount = total
+        new_order.save()
+        
+        # Xóa giỏ
+        request.session['cart'] = {}
+        return redirect('home')
+    return redirect('cart')
 
 
 # ==========================================
-# PHẦN 2: ADMIN (QUẢN TRỊ)
+# 2. ADMIN (QUẢN LÝ)
 # ==========================================
 
+@login_required
 def dashboard(request):
     return render(request, 'admin/dashboard.html')
 
-# --- Quản lý Sản phẩm ---
+# --- SẢN PHẨM ---
 def products_list(request):
-    mock_products = [
-        {'id': 101, 'name': 'Gạch men cao cấp', 'price': 150000, 'stock_quantity': 500, 'image_url': 'https://via.placeholder.com/50'},
-        {'id': 102, 'name': 'Xi măng Hà Tiên', 'price': 85000, 'stock_quantity': 200, 'image_url': ''},
-    ]
-    return render(request, 'admin/products.html', {'products': mock_products})
+    products = Product.objects.all().order_by('-id')
+    return render(request, 'admin/products.html', {'products': products})
 
-def product_form(request):
-    # Mock danh mục để hiện trong dropdown
-    mock_categories = [{'id': 1, 'name': 'Gạch'}, {'id': 2, 'name': 'Xi măng'}]
-    return render(request, 'admin/product-form.html', {'product': None, 'categories': mock_categories})
+# Hàm Form xử lý cả Thêm Mới và Sửa (Dựa vào ID)
+def product_form(request, id=None):
+    categories = Category.objects.all()
+    product = None
+    
+    # Nếu có ID -> Tìm sản phẩm để sửa
+    if id:
+        product = get_object_or_404(Product, id=id)
+        
+    return render(request, 'admin/product-form.html', {
+        'categories': categories,
+        'product': product  # Truyền sang HTML để điền sẵn vào ô input
+    })
 
+# Hàm Lưu (Xử lý logic làm sạch giá tiền + Update/Create)
 def product_save(request):
     if request.method == 'POST':
-        print(f"Lưu sản phẩm: {request.POST.get('name')}")
+        # Lấy dữ liệu thô
+        name = request.POST.get('name')
+        price_raw = request.POST.get('price', '0')
+        stock_raw = request.POST.get('stock_quantity', '0')
+        unit = request.POST.get('unit')
+        image = request.POST.get('image_url')
+        cat_id = request.POST.get('category_id')
+        prod_id = request.POST.get('id') # Lấy ID từ input hidden
+
+        # --- XỬ LÝ LÀM SẠCH DỮ LIỆU ---
+        # Xóa dấu chấm và phẩy để tránh lỗi "94.000"
+        try:
+            price = int(str(price_raw).replace('.', '').replace(',', ''))
+        except ValueError:
+            price = 0
+            
+        try:
+            stock = int(str(stock_raw).replace('.', '').replace(',', ''))
+        except ValueError:
+            stock = 0
+
+        cat = Category.objects.get(id=cat_id)
+
+        # --- LOGIC LƯU ---
+        if prod_id:
+            # TRƯỜNG HỢP SỬA (UPDATE)
+            prod = Product.objects.get(id=prod_id)
+            prod.name = name
+            prod.price = price
+            prod.unit = unit
+            prod.stock_quantity = stock
+            prod.category = cat
+            prod.image_url = image
+            prod.save()
+        else:
+            # TRƯỜNG HỢP THÊM MỚI (CREATE)
+            Product.objects.create(
+                name=name,
+                price=price,
+                unit=unit,
+                stock_quantity=stock,
+                category=cat,
+                image_url=image or 'https://via.placeholder.com/150'
+            )
+            
         return redirect('products')
     return redirect('products')
 
 def product_delete(request, id):
-    print(f"Xóa sản phẩm ID: {id}")
+    get_object_or_404(Product, id=id).delete()
     return redirect('products')
 
-# --- Quản lý Danh mục ---
+# --- DANH MỤC ---
 def categories_list(request):
-    mock_cats = [{'id': 1, 'name': 'Gạch ốp lát'}, {'id': 2, 'name': 'Vật liệu thô'}]
-    return render(request, 'admin/categories.html', {'categories': mock_cats})
+    cats = Category.objects.all()
+    return render(request, 'admin/categories.html', {'categories': cats})
 
 def category_form(request):
-    return render(request, 'admin/category-form.html', {'category': None})
+    return render(request, 'admin/category-form.html')
 
 def category_save(request):
     if request.method == 'POST':
-        print(f"Lưu danh mục: {request.POST.get('name')}")
+        Category.objects.create(name=request.POST.get('name'))
         return redirect('categories')
     return redirect('categories')
 
 def category_delete(request, id):
-    print(f"Xóa danh mục ID: {id}")
+    get_object_or_404(Category, id=id).delete()
     return redirect('categories')
 
-# --- Quản lý User ---
-def users_list(request):
-    mock_users = [
-        {'id': 1, 'username': 'admin', 'full_name': 'Quản trị viên', 'role': 'ROLE_ADMIN'},
-        {'id': 2, 'username': 'user1', 'full_name': 'Nguyễn Văn A', 'role': 'ROLE_USER'},
-    ]
-    return render(request, 'admin/users.html', {'users': mock_users})
+# --- KHO HÀNG (GIS) ---
+def warehouse_list(request):
+    warehouses = Warehouse.objects.all()
+    return render(request, 'admin/warehouses.html', {'warehouses': warehouses})
 
-def user_delete(request, id):
-    print(f"Xóa User ID: {id}")
-    return redirect('users')
-
-# --- Quản lý Hóa đơn ---
+# --- ĐƠN HÀNG ---
 def orders_list(request):
-    # Dữ liệu giả lập hóa đơn
-    mock_orders = [
-        {
-            'id': 1001, 
-            'user': {'fullName': 'Nguyễn Văn A'}, 
-            'orderDate': '2023-10-25', 
-            'totalAmount': 500000, 
-            'status': 'CHỜ XÁC NHẬN'
-        },
-        {
-            'id': 1002, 
-            'user': {'fullName': 'Trần Thị B'}, 
-            'orderDate': '2023-10-26', 
-            'totalAmount': 1200000, 
-            'status': 'ĐANG GIAO'
-        }
-    ]
-    return render(request, 'admin/orders.html', {'orders': mock_orders})
+    orders = Order.objects.all().order_by('-order_date')
+    return render(request, 'admin/orders.html', {'orders': orders})
 
 def order_update_status(request):
     if request.method == 'POST':
-        print(f"Cập nhật đơn {request.POST.get('id')} thành {request.POST.get('status')}")
-        return redirect('orders')
+        order = get_object_or_404(Order, id=request.POST.get('id'))
+        order.status = request.POST.get('status')
+        order.save()
     return redirect('orders')
+
+# --- USER ---
+def users_list(request):
+    return render(request, 'admin/users.html', {'users': []})
+
+def user_delete(request, id):
+    return redirect('users')
