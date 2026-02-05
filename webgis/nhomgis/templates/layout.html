@@ -35,7 +35,9 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Trang chủ</a></li>
-                    
+                    <a href="{% url 'shipping_page' %}" class="btn btn-primary" style="padding: 10px; background: orange; color: white; text-decoration: none; border-radius: 5px;">
+                        🚚 Tính phí vận chuyển
+                    </a>
                     {% if user.is_authenticated and user.is_staff %}
                     <li class="nav-item">
                         <a class="nav-link text-warning fw-bold" href="{% url 'dashboard' %}">QUẢN TRỊ ADMIN</a>

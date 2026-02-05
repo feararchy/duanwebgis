@@ -18,14 +18,17 @@ class Product(models.Model):
     def __str__(self): return self.name
 
 # 3. Kho Hàng (Phục vụ GIS)
+
 class Warehouse(models.Model):
-    name = models.CharField(max_length=100, verbose_name="Tên kho")
-    address = models.CharField(max_length=200, verbose_name="Địa chỉ")
-    latitude = models.FloatField(verbose_name="Vĩ độ")  # Tọa độ Y
-    longitude = models.FloatField(verbose_name="Kinh độ") # Tọa độ X
+    name = models.CharField(max_length=255, verbose_name="Tên kho hàng")
+    address = models.CharField(max_length=500, verbose_name="Địa chỉ")
+    latitude = models.FloatField(verbose_name="Vĩ độ")
+    longitude = models.FloatField(verbose_name="Kinh độ")
+    base_fee = models.FloatField(default=15000, verbose_name="Phí cố định (VNĐ)")
+    fee_per_km = models.FloatField(default=5000, verbose_name="Phí mỗi KM (VNĐ)")
 
-    def __str__(self): return self.name
-
+    def __str__(self):
+        return self.name
 # 4. Hóa Đơn (Đơn hàng)
 class Order(models.Model):
     STATUS_CHOICES = [

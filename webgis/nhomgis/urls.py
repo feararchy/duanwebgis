@@ -16,6 +16,9 @@ urlpatterns = [
     path('cart/remove/', views.cart_remove, name='cart_remove'),
     path('checkout/', views.checkout, name='checkout'),
 
+    # Trang GIS - Tính phí vận chuyển
+    path('shipping/', views.shipping_page, name='shipping_page'), # Trang giao diện
+    path('api/calculate-shipping/', views.api_calculate_shipping, name='calculate_shipping'), # API xử lý
 
     # --- PHẦN 2: QUẢN TRỊ VIÊN (ADMIN) ---
     path('dashboard/', views.dashboard, name='dashboard'),          # Bảng điều khiển

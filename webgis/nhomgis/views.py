@@ -2,6 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .models import Product, Category, Order, OrderItem, Warehouse
+import requests
+from django.http import JsonResponse
+
+
 
 # ==========================================
 # 1. PUBLIC (KHÁCH HÀNG)
@@ -239,3 +243,45 @@ def users_list(request):
 
 def user_delete(request, id):
     return redirect('users')
+
+
+
+def api_calculate_shipping(request):
+    if request.method == 'POST':
+        try:
+            # Nhận tọa độ khách hàng chọn từ bản đồ
+            customer_lat = request.POST.get('lat')
+            customer_lng = request.POST.get('lng')
+            
+            # Lấy kho hàng đầu tiên làm điểm xuất phát (hoặc chọn theo ID)
+            warehouse = Warehouse.objects.first()
+            if not warehouse:
+                return JsonResponse({'error': 'Chưa thiết lập kho hàng trong Database'}, status=400)
+
+            # Gọi OSRM API để lấy khoảng cách đường bộ thực tế
+            # Định dạng OSRM: {lng},{lat};{lng},{lat}
+            osrm_url = f"http://router.project-osrm.org/route/v1/driving/{warehouse.longitude},{warehouse.latitude};{customer_lng},{customer_lat}?overview=false"
+            
+            response = requests.get(osrm_url)
+            data = response.json()
+
+            if data.get('code') == 'Ok':
+                # Khoảng cách trả về là mét, đổi sang km
+                distance_km = data['routes'][0]['distance'] / 1000
+                
+                # Tính phí: Phí cứng + (Số km * Đơn giá)
+                total_fee = warehouse.base_fee + (distance_km * warehouse.fee_per_km)
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'distance': round(distance_km, 2),
+                    'fee': round(total_fee, -2), # Làm tròn đến hàng trăm
+                    'warehouse': warehouse.name
+                })
+            else:
+                return JsonResponse({'error': 'Không tìm thấy đường bộ phù hợp'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+def shipping_page(request):
+    return render(request, 'shipping.html')
