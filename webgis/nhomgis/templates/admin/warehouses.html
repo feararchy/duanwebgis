@@ -1,0 +1,50 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h3><i class="bi bi-building"></i> Cấu hình Kho hàng</h3>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Quay lại</a>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Để thêm hoặc sửa tọa độ Kho hàng, bạn vui lòng truy cập trang quản trị hệ thống: 
+        <a href="/admin/nhomgis/warehouse/" target="_blank" class="fw-bold">Tại đây</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0 align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Tên Kho</th>
+                        <th>Địa chỉ</th>
+                        <th>Tọa độ (Lat / Lon)</th>
+                        <th>Phí cơ bản</th>
+                        <th>Phí/Km</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in warehouses %}
+                    <tr>
+                        <td class="fw-bold">{{ w.name }}</td>
+                        <td>{{ w.address }}</td>
+                        <td>{{ w.latitude }} / {{ w.longitude }}</td>
+                        <td>{{ w.base_fee }} đ</td>
+                        <td>{{ w.fee_per_km }} đ</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-danger">
+                            Chưa có kho hàng nào! Hệ thống tính phí sẽ không hoạt động.
+                            <br>
+                            Hãy vào <a href="/admin/">/admin</a> để thêm kho.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

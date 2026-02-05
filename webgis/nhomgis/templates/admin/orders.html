@@ -1,62 +1,54 @@
 {% extends 'layout.html' %}
-
-{% load humanize %} 
+{% load humanize %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h3 class="mb-4">Quản lý Hóa Đơn</h3>
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-                <table class="table table-bordered mb-0 align-middle">
-                    <thead class="table-secondary">
-                        <tr>
-                            <th>ID</th>
-                            <th>Khách hàng</th>
-                            <th>Ngày đặt</th>
-                            <th>Tổng tiền</th>
-                            <th>Trạng thái</th>
-                            <th>Cập nhật</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for o in orders %}
-                        <tr>
-                            <td>{{ o.id }}</td>
-                            <td class="fw-bold">{{ o.user.fullName }}</td>
-                            <td>{{ o.orderDate|date:"d/m/Y H:i" }}</td>
-                            
-                            <td class="text-danger fw-bold">
-                                {{ o.totalAmount|intcomma }} đ
-                            </td>
-
-                            <td>
-                                {% if o.status == 'CHỜ XÁC NHẬN' %}
-                                    <span class="badge bg-warning text-dark">CHỜ XÁC NHẬN</span>
-                                {% elif o.status == 'ĐANG GIAO' %}
-                                    <span class="badge bg-primary">ĐANG GIAO</span>
-                                {% elif o.status == 'ĐÃ GIAO' %}
-                                    <span class="badge bg-success">ĐÃ GIAO</span>
-                                {% elif o.status == 'ĐÃ HỦY' %}
-                                    <span class="badge bg-danger">ĐÃ HỦY</span>
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                <form action="/admin/orders/status" method="post" class="d-flex gap-2">
-                                    {% csrf_token %} <input type="hidden" name="id" value="{{ o.id }}">
-                                    <select name="status" class="form-select form-select-sm">
-                                        <option value="ĐANG GIAO">ĐANG GIAO</option>
-                                        <option value="ĐÃ GIAO">ĐÃ GIAO</option>
-                                        <option value="ĐÃ HỦY">ĐÃ HỦY</option>
-                                    </select>
-                                    <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %} </tbody>
-                </table>
-            </div>
+<div class="container mt-4">
+    <h3>Quản lý Đơn Hàng</h3>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle small">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Khách / Ngày</th>
+                        <th>Địa chỉ giao</th>
+                        <th class="text-end">Tiền hàng</th>
+                        <th class="text-end">Phí Ship</th>
+                        <th class="text-end">TỔNG THU</th>
+                        <th>Trạng thái</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>
+                            <b>{{ order.user.username }}</b><br>
+                            <span class="text-muted">{{ order.order_date|date:"d/m H:i" }}</span>
+                        </td>
+                        <td style="max-width: 250px;">{{ order.shipping_address|truncatechars:50 }}</td>
+                        
+                        <td class="text-end">{{ order.total_amount|add:order.shipping_fee|add:"-1"|add:order.shipping_fee|intcomma }} đ</td> 
+                        <td class="text-end text-primary">+{{ order.shipping_fee|intcomma }} đ</td>
+                        <td class="text-end fw-bold text-danger fs-6">{{ order.total_amount|intcomma }} đ</td>
+                        
+                        <td>
+                            <form action="{% url 'order_status' %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="id" value="{{ order.id }}">
+                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="{{ order.status }}">{{ order.status }}</option>
+                                    <option value="ĐANG GIAO">ĐANG GIAO</option>
+                                    <option value="ĐÃ GIAO">ĐÃ GIAO</option>
+                                </select>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">Quay lại</a>
     </div>
+</div>
 {% endblock %}

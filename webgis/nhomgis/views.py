@@ -4,10 +4,8 @@ from django.contrib.auth.decorators import login_required
 from .models import Product, Category, Order, OrderItem, Warehouse
 import requests
 from django.http import JsonResponse
-from django.contrib.auth.models import User  # <--- Quan trọng để tạo user
-from django.contrib import messages          # <--- Để thông báo lỗi/thành công
-
-
+from django.contrib.auth.models import User
+from django.contrib import messages
 
 # ==========================================
 # 1. PUBLIC (KHÁCH HÀNG)
@@ -38,6 +36,33 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('/login/?logout')
+
+def register(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if password != confirm_password:
+            messages.error(request, 'Mật khẩu nhập lại không khớp!')
+            return redirect('register')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Tên tài khoản này đã có người dùng!')
+            return redirect('register')
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email này đã được đăng ký!')
+            return redirect('register')
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        user.save()
+
+        messages.success(request, 'Đăng ký thành công! Hãy đăng nhập.')
+        return redirect('login')
+
+    return render(request, 'register.html')
 
 # --- GIỎ HÀNG (SESSION) ---
 def cart_view(request):
@@ -84,6 +109,7 @@ def cart_remove(request):
             request.session['cart'] = cart
     return redirect('cart')
 
+# --- THANH TOÁN & TẠO ĐƠN (Đã cập nhật logic Phí Ship) ---
 @login_required(login_url='/login/')
 def checkout(request):
     if request.method == 'POST':
@@ -91,34 +117,49 @@ def checkout(request):
         lat = request.POST.get('lat')
         lon = request.POST.get('lon')
         
-        # 1. Tạo đơn hàng
+        # 1. Lấy phí ship từ form gửi lên (convert sang int)
+        try:
+            shipping_fee = int(float(request.POST.get('shipping_fee', 0)))
+        except ValueError:
+            shipping_fee = 0
+
+        # 2. Tạo đơn hàng (Lưu tạm total=0)
         new_order = Order.objects.create(
             user=request.user,
             shipping_address=address,
             customer_lat=float(lat) if lat else None,
             customer_lon=float(lon) if lon else None,
-            status='CHỜ XÁC NHẬN'
+            status='CHỜ XÁC NHẬN',
+            shipping_fee=shipping_fee, # Lưu phí ship
+            total_amount=0 
         )
         
-        # 2. Lưu chi tiết
+        # 3. Lưu chi tiết sản phẩm & Tính tổng tiền hàng
         cart = request.session.get('cart', {})
-        total = 0
+        product_total = 0 # Tổng tiền hàng
+        
         for p_id, qty in cart.items():
-            prod = Product.objects.get(id=p_id)
-            OrderItem.objects.create(
-                order=new_order,
-                product=prod,
-                quantity=qty,
-                price_at_purchase=prod.price
-            )
-            total += prod.price * qty
+            try:
+                prod = Product.objects.get(id=p_id)
+                OrderItem.objects.create(
+                    order=new_order,
+                    product=prod,
+                    quantity=qty,
+                    price_at_purchase=prod.price
+                )
+                product_total += prod.price * qty
+            except Product.DoesNotExist:
+                continue
             
-        new_order.total_amount = total
+        # 4. CẬP NHẬT TỔNG TIỀN (Hàng + Ship)
+        new_order.total_amount = product_total + shipping_fee
         new_order.save()
         
-        # Xóa giỏ
+        # Xóa giỏ và thông báo
         request.session['cart'] = {}
+        messages.success(request, 'Đặt hàng thành công!')
         return redirect('home')
+
     return redirect('cart')
 
 
@@ -135,34 +176,26 @@ def products_list(request):
     products = Product.objects.all().order_by('-id')
     return render(request, 'admin/products.html', {'products': products})
 
-# Hàm Form xử lý cả Thêm Mới và Sửa (Dựa vào ID)
 def product_form(request, id=None):
     categories = Category.objects.all()
     product = None
-    
-    # Nếu có ID -> Tìm sản phẩm để sửa
     if id:
         product = get_object_or_404(Product, id=id)
-        
     return render(request, 'admin/product-form.html', {
         'categories': categories,
-        'product': product  # Truyền sang HTML để điền sẵn vào ô input
+        'product': product
     })
 
-# Hàm Lưu (Xử lý logic làm sạch giá tiền + Update/Create)
 def product_save(request):
     if request.method == 'POST':
-        # Lấy dữ liệu thô
         name = request.POST.get('name')
         price_raw = request.POST.get('price', '0')
         stock_raw = request.POST.get('stock_quantity', '0')
         unit = request.POST.get('unit')
         image = request.POST.get('image_url')
         cat_id = request.POST.get('category_id')
-        prod_id = request.POST.get('id') # Lấy ID từ input hidden
+        prod_id = request.POST.get('id')
 
-        # --- XỬ LÝ LÀM SẠCH DỮ LIỆU ---
-        # Xóa dấu chấm và phẩy để tránh lỗi "94.000"
         try:
             price = int(str(price_raw).replace('.', '').replace(',', ''))
         except ValueError:
@@ -175,9 +208,7 @@ def product_save(request):
 
         cat = Category.objects.get(id=cat_id)
 
-        # --- LOGIC LƯU ---
-        if prod_id:
-            # TRƯỜNG HỢP SỬA (UPDATE)
+        if prod_id: # Sửa
             prod = Product.objects.get(id=prod_id)
             prod.name = name
             prod.price = price
@@ -186,15 +217,10 @@ def product_save(request):
             prod.category = cat
             prod.image_url = image
             prod.save()
-        else:
-            # TRƯỜNG HỢP THÊM MỚI (CREATE)
+        else: # Thêm mới
             Product.objects.create(
-                name=name,
-                price=price,
-                unit=unit,
-                stock_quantity=stock,
-                category=cat,
-                image_url=image or 'https://via.placeholder.com/150'
+                name=name, price=price, unit=unit, stock_quantity=stock,
+                category=cat, image_url=image or 'https://via.placeholder.com/150'
             )
             
         return redirect('products')
@@ -241,84 +267,78 @@ def order_update_status(request):
 
 # --- USER ---
 def users_list(request):
-    return render(request, 'admin/users.html', {'users': []})
+    users = User.objects.filter(is_superuser=False).order_by('-date_joined')
+    return render(request, 'admin/users.html', {'users': users})
 
 def user_delete(request, id):
+    user = get_object_or_404(User, id=id)
+    if not user.is_superuser:
+        user.delete()
+        messages.success(request, 'Đã xóa khách hàng thành công!')
+    else:
+        messages.error(request, 'Không thể xóa tài khoản Admin!')
     return redirect('users')
 
-def register(request):
-    if request.method == 'POST':
-        # 1. Lấy dữ liệu từ form
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
+# --- BẢN ĐỒ ADMIN (MARKER CLUSTERING) ---
+@login_required
+def admin_map_view(request):
+    if not request.user.is_staff:
+        return redirect('home')
+    return render(request, 'admin/map_clustering.html')
 
-        # 2. Kiểm tra dữ liệu
-        # - Kiểm tra mật khẩu nhập lại có khớp không
-        if password != confirm_password:
-            messages.error(request, 'Mật khẩu nhập lại không khớp!')
-            return redirect('register')
+def api_orders_locations(request):
+    orders = Order.objects.exclude(status__in=['ĐÃ GIAO', 'ĐÃ HỦY'])\
+                          .exclude(customer_lat__isnull=True)
+    
+    data = []
+    for order in orders:
+        data.append({
+            'id': order.id,
+            'customer': order.user.username,
+            'lat': order.customer_lat,
+            'lon': order.customer_lon,
+            'address': order.shipping_address,
+            'total': order.total_amount,
+            'status': order.status,
+            'url_detail': f"/orders/"
+        })
         
-        # - Kiểm tra tên tài khoản đã tồn tại chưa
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Tên tài khoản này đã có người dùng!')
-            return redirect('register')
-
-        # - Kiểm tra email đã tồn tại chưa
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email này đã được đăng ký!')
-            return redirect('register')
-
-        # 3. Tạo tài khoản
-        # Dùng create_user để nó tự động mã hóa mật khẩu (bảo mật)
-        user = User.objects.create_user(username=username, email=email, password=password)
-        user.save()
-
-        # 4. Thông báo và chuyển sang trang đăng nhập
-        messages.success(request, 'Đăng ký thành công! Hãy đăng nhập.')
-        return redirect('login')
-
-    return render(request, 'register.html')
+    return JsonResponse({'orders': data})
 
 
-
+# --- API TÍNH PHÍ VẬN CHUYỂN (GIS) ---
 def api_calculate_shipping(request):
     if request.method == 'POST':
         try:
-            # Nhận tọa độ khách hàng chọn từ bản đồ
             customer_lat = request.POST.get('lat')
             customer_lng = request.POST.get('lng')
             
-            # Lấy kho hàng đầu tiên làm điểm xuất phát (hoặc chọn theo ID)
             warehouse = Warehouse.objects.first()
             if not warehouse:
                 return JsonResponse({'error': 'Chưa thiết lập kho hàng trong Database'}, status=400)
 
-            # Gọi OSRM API để lấy khoảng cách đường bộ thực tế
-            # Định dạng OSRM: {lng},{lat};{lng},{lat}
             osrm_url = f"http://router.project-osrm.org/route/v1/driving/{warehouse.longitude},{warehouse.latitude};{customer_lng},{customer_lat}?overview=false"
             
             response = requests.get(osrm_url)
             data = response.json()
 
             if data.get('code') == 'Ok':
-                # Khoảng cách trả về là mét, đổi sang km
                 distance_km = data['routes'][0]['distance'] / 1000
                 
-                # Tính phí: Phí cứng + (Số km * Đơn giá)
+                # Tính phí: Base Fee + (Số Km * Fee per Km)
                 total_fee = warehouse.base_fee + (distance_km * warehouse.fee_per_km)
                 
                 return JsonResponse({
                     'status': 'success',
                     'distance': round(distance_km, 2),
-                    'fee': round(total_fee, -2), # Làm tròn đến hàng trăm
+                    'fee': int(round(total_fee, -2)), # Chuyển thành số nguyên (VNĐ)
                     'warehouse': warehouse.name
                 })
             else:
-                return JsonResponse({'error': 'Không tìm thấy đường bộ phù hợp'}, status=400)
+                return JsonResponse({'error': 'Không tìm thấy đường đi'}, status=400)
                 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 def shipping_page(request):
     return render(request, 'shipping.html')

@@ -1,0 +1,117 @@
+{% extends 'layout.html' %}
+{% load humanize %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3><i class="bi bi-map"></i> Bản đồ giao hàng (Admin)</h3>
+        <div>
+            <span class="badge bg-primary me-1">Kho hàng</span>
+            <span class="badge bg-danger me-2">Đơn khách</span>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-sm">Quay lại</a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div id="map" style="height: 80vh; width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+    // --- BƯỚC 1: KHỞI TẠO BẢN ĐỒ ---
+    // Tọa độ trung tâm TP.HCM: [10.8231, 106.6297]
+    var map = L.map('map').setView([10.8231, 106.6297], 12);
+
+    // Thêm lớp nền bản đồ (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // --- BƯỚC 2: HIỂN THỊ KHO HÀNG (Màu Xanh) ---
+    // (Optional: Nếu bạn muốn hiện kho lên bản đồ luôn)
+    // Tạm thời mình fix cứng tọa độ kho bạn vừa gửi để test bản đồ chạy chưa
+    // Sau này có thể lấy từ Database
+    var warehouseIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+    L.marker([10.807833, 106.665750], {icon: warehouseIcon})
+     .bindPopup("<b>KHO GÒ VẤP</b><br>Trung tâm phân phối")
+     .addTo(map);
+
+
+    // --- BƯỚC 3: HIỂN THỊ ĐƠN HÀNG (Màu Đỏ - Có gom nhóm) ---
+    var markers = L.markerClusterGroup();
+    
+    // Icon màu đỏ cho đơn hàng
+    var orderIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    // Gọi API lấy dữ liệu
+    fetch('/api/orders-locations/')
+        .then(response => response.json())
+        .then(data => {
+            var orders = data.orders;
+
+            console.log("Tìm thấy " + orders.length + " đơn hàng."); // Kiểm tra trong F12 Console
+
+            if (orders.length === 0) {
+                // Nếu không có đơn nào thì thông báo nhẹ
+                // alert("Hiện tại không có đơn hàng nào chờ giao!");
+            }
+
+            orders.forEach(order => {
+                if (order.lat && order.lon) {
+                    var marker = L.marker([order.lat, order.lon], {icon: orderIcon});
+                    
+                    var popupContent = `
+                        <div style="font-family: Arial, sans-serif;">
+                            <h6 class="text-danger fw-bold m-0">Đơn #${order.id}</h6>
+                            <hr class="my-1">
+                            <div><b>Khách:</b> ${order.customer}</div>
+                            <div><b>Tiền:</b> ${parseInt(order.total).toLocaleString()} đ</div>
+                            <div class="small text-muted mt-1"><i>${order.address}</i></div>
+                            <div class="mt-2">
+                                <span class="badge bg-warning text-dark">${order.status}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    markers.addLayer(marker);
+                }
+            });
+
+            map.addLayer(markers);
+            
+            // Zoom bản đồ để thấy hết các điểm
+            if (orders.length > 0) {
+                map.fitBounds(markers.getBounds());
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi tải dữ liệu:', error);
+        });
+</script>
+{% endblock %}

@@ -6,7 +6,7 @@
         <h2 class="mb-4 fw-bold border-bottom pb-2">Bảng Điều Khiển Admin</h2>
         
         <div class="row g-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <a href="{% url 'orders' %}" class="card admin-card p-4 text-center text-decoration-none bg-info bg-opacity-10 border-info text-dark h-100 hover-shadow">
                     <i class="bi bi-receipt fs-1 text-info mb-3"></i>
                     <h5 class="fw-bold">Quản lý Hóa Đơn</h5>
@@ -14,7 +14,7 @@
                 </a>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <a href="{% url 'products' %}" class="card admin-card p-4 text-center text-decoration-none bg-warning bg-opacity-10 border-warning text-dark h-100 hover-shadow">
                     <i class="bi bi-box-seam fs-1 text-warning mb-3"></i>
                     <h5 class="fw-bold">Quản lý Sản Phẩm</h5>
@@ -22,7 +22,15 @@
                 </a>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
+                <a href="{% url 'admin_map' %}" class="card admin-card p-4 text-center text-decoration-none bg-primary bg-opacity-10 border-primary text-dark h-100 hover-shadow">
+                    <i class="bi bi-map-fill fs-1 text-primary mb-3"></i>
+                    <h5 class="fw-bold">Bản Đồ Giao Hàng</h5>
+                    <small>Xem vị trí đơn chờ giao</small>
+                </a>
+            </div>
+
+            <div class="col-md-4">
                 <a href="{% url 'categories' %}" class="card admin-card p-4 text-center text-decoration-none bg-success bg-opacity-10 border-success text-dark h-100 hover-shadow">
                     <i class="bi bi-tags fs-1 text-success mb-3"></i>
                     <h5 class="fw-bold">Quản lý Danh Mục</h5>
@@ -30,13 +38,22 @@
                 </a>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <a href="{% url 'users' %}" class="card admin-card p-4 text-center text-decoration-none bg-danger bg-opacity-10 border-danger text-dark h-100 hover-shadow">
                     <i class="bi bi-people fs-1 text-danger mb-3"></i>
                     <h5 class="fw-bold">Quản lý Khách Hàng</h5>
                     <small>Xem danh sách tài khoản</small>
                 </a>
             </div>
+
+            <div class="col-md-4">
+                <a href="{% url 'warehouses' %}" class="card admin-card p-4 text-center text-decoration-none bg-secondary bg-opacity-10 border-secondary text-dark h-100 hover-shadow">
+                    <i class="bi bi-building fs-1 text-secondary mb-3"></i>
+                    <h5 class="fw-bold">Cấu hình Kho</h5>
+                    <small>Thiết lập tọa độ kho</small>
+                </a>
+            </div>
+
         </div>
         
         <div class="mt-5 text-end">
