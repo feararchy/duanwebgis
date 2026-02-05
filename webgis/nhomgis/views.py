@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from .models import Product, Category, Order, OrderItem, Warehouse
 import requests
 from django.http import JsonResponse
+from django.contrib.auth.models import User  # <--- Quan trọng để tạo user
+from django.contrib import messages          # <--- Để thông báo lỗi/thành công
 
 
 
@@ -243,6 +245,41 @@ def users_list(request):
 
 def user_delete(request, id):
     return redirect('users')
+
+def register(request):
+    if request.method == 'POST':
+        # 1. Lấy dữ liệu từ form
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+
+        # 2. Kiểm tra dữ liệu
+        # - Kiểm tra mật khẩu nhập lại có khớp không
+        if password != confirm_password:
+            messages.error(request, 'Mật khẩu nhập lại không khớp!')
+            return redirect('register')
+        
+        # - Kiểm tra tên tài khoản đã tồn tại chưa
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Tên tài khoản này đã có người dùng!')
+            return redirect('register')
+
+        # - Kiểm tra email đã tồn tại chưa
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email này đã được đăng ký!')
+            return redirect('register')
+
+        # 3. Tạo tài khoản
+        # Dùng create_user để nó tự động mã hóa mật khẩu (bảo mật)
+        user = User.objects.create_user(username=username, email=email, password=password)
+        user.save()
+
+        # 4. Thông báo và chuyển sang trang đăng nhập
+        messages.success(request, 'Đăng ký thành công! Hãy đăng nhập.')
+        return redirect('login')
+
+    return render(request, 'register.html')
 
 
 

@@ -17,6 +17,15 @@
                 <h3 class="fw-bold mt-2">Đăng Nhập</h3>
             </div>
             
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} text-center alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             {% if error_message %}
                 <div class="alert alert-danger text-center">{{ error_message }}</div>
             {% endif %}
@@ -30,15 +39,27 @@
                 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Tài khoản</label>
-                    <input type="text" name="username" class="form-control py-2" placeholder="Nhập username..." required>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" class="form-control py-2" placeholder="Nhập username..." required>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Mật khẩu</label>
-                    <input type="password" name="password" class="form-control py-2" placeholder="Nhập password..." required>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                        <input type="password" name="password" class="form-control py-2" placeholder="Nhập password..." required>
+                    </div>
                 </div>
+                
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">ĐĂNG NHẬP</button>
             </form>
             
+            <div class="mt-3 text-center">
+                <span class="text-muted">Chưa có tài khoản?</span> 
+                <a href="{% url 'register' %}" class="text-decoration-none fw-bold">Đăng ký ngay</a>
+            </div>
+
             <div class="mt-4 p-3 bg-white rounded border text-center small text-muted">
                 <p class="mb-1 fw-bold">Tài khoản dùng thử:</p>
                 <div>Khách: <b>user / 123456</b></div>
@@ -46,5 +67,7 @@
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

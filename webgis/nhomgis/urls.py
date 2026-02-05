@@ -42,6 +42,7 @@ urlpatterns = [
     # Quản lý Người dùng
     path('users/', views.users_list, name='users'),
     path('users/delete/<int:id>/', views.user_delete, name='user_delete'),
+    path('register/', views.register, name='register'),
 
     # Quản lý Hóa đơn (Orders)
     path('orders/', views.orders_list, name='orders'),
