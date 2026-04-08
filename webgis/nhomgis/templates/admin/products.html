@@ -1,79 +1,71 @@
 {% extends 'layout.html' %}
-{% load static %}
-{% load humanize %} 
+{% load humanize %}
 
 {% block content %}
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3>Danh sách Sản Phẩm</h3>
-            <a href="{% url 'product_add' %}" class="btn btn-primary fw-bold">
-                <i class="bi bi-plus-lg"></i> Thêm Mới
-            </a>
-        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-                <table class="table table-striped mb-0 align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Ảnh</th>
-                            <th>Tên SP</th>
-                            <th>Giá</th>
-                            <th>Tồn kho</th>
-                            <th>Đơn vị</th>
-                            <th class="text-center">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in products %}
-                        <tr>
-                            <td>{{ p.id }}</td>
-                            
-                            <td>
-                                <img src="{{ p.image_url }}" 
-                                     width="50" height="50" 
-                                     class="rounded border" 
-                                     style="object-fit: cover;"
-                                     alt="{{ p.name }}"
-                                     onerror="this.src='https://via.placeholder.com/50?text=No+Img'">
-                            </td>
-
-                            <td class="fw-bold">{{ p.name }}</td>
-                            
-                            <td class="text-success fw-bold">{{ p.price|intcomma }} đ</td>
-                            
-                            <td>{{ p.stock_quantity }}</td>
-                            <td>{{ p.unit }}</td>
-
-                            <td class="text-center">
-                                <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-warning me-2" title="Sửa">
-                                    <i class="bi bi-pencil-square"></i> Sửa
-                                </a>
-
-                                <a href="{% url 'product_delete' p.id %}" 
-                                   class="btn btn-sm btn-danger" 
-                                   onclick="return confirm('Bạn chắc chắn muốn xóa sản phẩm: {{ p.name }}?')"
-                                   title="Xóa">
-                                    <i class="bi bi-trash"></i> Xóa
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
-                                    <i class="bi bi-box-seam display-4 d-block mb-2"></i>
-                                    Chưa có sản phẩm nào. Hãy thêm mới!
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary mt-3">
-            <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Danh sách Sản Phẩm</h2>
+        <a href="{% url 'product_add' %}" class="btn btn-primary fw-bold shadow-sm">
+            <i class="bi bi-plus-lg"></i> Thêm Mới
         </a>
     </div>
+    
+    <div class="table-responsive bg-white shadow-sm rounded border">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="py-3">ID</th>
+                    <th class="py-3">Ảnh</th>
+                    <th class="py-3">Tên SP</th>
+                    <th class="py-3">Giá</th>
+                    <th class="py-3">Tồn kho</th>
+                    <th class="py-3">Đơn vị</th>
+                    <th class="py-3 text-center">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td class="fw-bold text-muted">{{ p.id }}</td>
+                    
+                    <td>
+                        {% if p.image %}
+                            <img src="{{ p.image.url }}" alt="{{ p.name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd;">
+                        {% else %}
+                            <img src="https://via.placeholder.com/50" alt="No image" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd;">
+                        {% endif %}
+                    </td>
+                    
+                    <td class="fw-bold">{{ p.name }}</td>
+                    <td class="text-success fw-bold">{{ p.price|intcomma }} đ</td>
+                    <td>
+                        {% if p.stock_quantity > 0 %}
+                            <span class="badge bg-success">{{ p.stock_quantity }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">Hết hàng</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.unit }}</td>
+                    
+                    <td class="text-center">
+                        <a href="{% url 'product_edit' p.id %}" class="btn btn-sm btn-warning shadow-sm me-1">
+                            <i class="bi bi-pencil-square"></i> Sửa
+                        </a>
+                        <a href="{% url 'product_delete' p.id %}" class="btn btn-sm btn-danger shadow-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
+                            <i class="bi bi-trash"></i> Xóa
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-box-seam display-4 d-block mb-3"></i>
+                        Chưa có sản phẩm nào trong kho.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

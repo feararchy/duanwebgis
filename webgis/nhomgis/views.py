@@ -1,344 +1,235 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from .models import Product, Category, Order, OrderItem, Warehouse
+from .models import Product, Category, Order, OrderItem, Warehouse, ProductImage, Review, Post, StoreReview
 import requests
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.core.paginator import Paginator
 
 # ==========================================
 # 1. PUBLIC (KHÁCH HÀNG)
 # ==========================================
 
 def home(request):
-    # Lấy sản phẩm từ Database thật, sắp xếp mới nhất lên đầu
-    products = Product.objects.all().order_by('-id')
-    return render(request, 'index.html', {'products': products})
+    categories = Category.objects.all()
+    products_list = Product.objects.all().order_by('-id')
+
+    # CHUẨN BỊ DANH SÁCH ẢNH CHO CAROUSEL TẠI TRANG CHỦ
+    for p in products_list:
+        all_imgs = []
+        if p.image:
+            all_imgs.append(p.image.url) # Ảnh chính
+        
+        # Lấy thêm các ảnh phụ từ gallery
+        for sub_img in p.images.all():
+            all_imgs.append(sub_img.image.url)
+            
+        # Nếu hoàn toàn không có ảnh nào thì dùng ảnh tạm
+        if not all_imgs:
+            all_imgs.append("https://via.placeholder.com/300")
+            
+        p.image_list = all_imgs # Đưa vào mảng để lặp trong HTML
+
+    # Xử lý tìm kiếm và bộ lọc
+    search_query = request.GET.get('q', '')
+    cat_id = request.GET.get('category', '')
+    if search_query: 
+        products_list = products_list.filter(name__icontains=search_query)
+    if cat_id and cat_id != 'all': 
+        products_list = products_list.filter(category_id=cat_id)
+
+    # Phân trang
+    paginator = Paginator(products_list, 8) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Đánh giá cửa hàng
+    store_reviews = StoreReview.objects.all().order_by('-created_at')[:5]
+    has_store_reviewed = False
+    if request.user.is_authenticated:
+        has_store_reviewed = StoreReview.objects.filter(user=request.user).exists()
+
+    return render(request, 'index.html', {
+        'page_obj': page_obj, 'categories': categories,
+        'search_query': search_query, 'cat_id': cat_id,
+        'store_reviews': store_reviews, 'has_store_reviewed': has_store_reviewed
+    })
 
 def product_detail(request, id):
     product = get_object_or_404(Product, id=id)
-    return render(request, 'product-detail.html', {'product': product})
+    reviews = product.reviews.all().order_by('-created_at')
+    has_reviewed = False
+    if request.user.is_authenticated:
+        has_reviewed = Review.objects.filter(user=request.user, product=product).exists()
+    return render(request, 'product-detail.html', {'product': product, 'reviews': reviews, 'has_reviewed': has_reviewed})
+
+@login_required(login_url='/login/')
+def add_review(request, product_id):
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=product_id)
+        stars = int(request.POST.get('stars', 5))
+        comment = request.POST.get('comment', '')
+        if not Review.objects.filter(user=request.user, product=product).exists():
+            Review.objects.create(user=request.user, product=product, stars=stars, comment=comment)
+            messages.success(request, 'Đánh giá đã được ghi nhận!')
+        else:
+            messages.error(request, 'Bạn đã đánh giá sản phẩm này rồi.')
+    return redirect('product_detail', id=product_id)
+
+@login_required(login_url='/login/')
+def add_store_review(request):
+    if request.method == 'POST':
+        stars = int(request.POST.get('stars', 5))
+        comment = request.POST.get('comment', '')
+        if not StoreReview.objects.filter(user=request.user).exists():
+            StoreReview.objects.create(user=request.user, stars=stars, comment=comment)
+            messages.success(request, "Cảm ơn bạn đã đánh giá cửa hàng!")
+        else:
+            messages.error(request, "Bạn đã đánh giá rồi.")
+    return redirect('home')
+
+def blog_list(request):
+    posts_list = Post.objects.all().order_by('-created_at')
+    paginator = Paginator(posts_list, 6)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'blog.html', {'page_obj': page_obj})
+
+def blog_detail(request, id):
+    post = get_object_or_404(Post, id=id)
+    return render(request, 'blog_detail.html', {'post': post})
+
+@login_required(login_url='/login/')
+def blog_create(request):
+    if not request.user.is_staff: return redirect('blog_list')
+    if request.method == 'POST':
+        Post.objects.create(title=request.POST.get('title'), content=request.POST.get('content'), thumbnail=request.FILES.get('thumbnail'), author=request.user)
+        messages.success(request, "Đã đăng bài thành công!")
+        return redirect('blog_list')
+    return render(request, 'blog_form.html')
+
+# ==========================================
+# 2. TÀI KHOẢN & GIỎ HÀNG
+# ==========================================
 
 def login_view(request):
     if request.method == 'POST':
-        u = request.POST.get('username')
-        p = request.POST.get('password')
-        user = authenticate(request, username=u, password=p)
-        if user is not None:
+        user = authenticate(request, username=request.POST.get('username'), password=request.POST.get('password'))
+        if user:
             login(request, user)
-            if user.is_staff: return redirect('dashboard')
-            else: return redirect('home')
-        else:
-            return render(request, 'login.html', {'error_message': 'Sai tài khoản hoặc mật khẩu!'})
+            return redirect('dashboard') if user.is_staff else redirect('home')
+        return render(request, 'login.html', {'error_message': 'Sai tài khoản!'})
     return render(request, 'login.html')
 
 def logout_view(request):
-    logout(request)
-    return redirect('/login/?logout')
+    logout(request); return redirect('/login/')
 
 def register(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-
-        if password != confirm_password:
-            messages.error(request, 'Mật khẩu nhập lại không khớp!')
-            return redirect('register')
-        
-        if User.objects.filter(username=username).exists():
-            messages.error(request, 'Tên tài khoản này đã có người dùng!')
-            return redirect('register')
-
-        if User.objects.filter(email=email).exists():
-            messages.error(request, 'Email này đã được đăng ký!')
-            return redirect('register')
-
-        user = User.objects.create_user(username=username, email=email, password=password)
-        user.save()
-
-        messages.success(request, 'Đăng ký thành công! Hãy đăng nhập.')
+        u, e, p = request.POST.get('username'), request.POST.get('email'), request.POST.get('password')
+        User.objects.create_user(username=u, email=e, password=p).save()
         return redirect('login')
-
     return render(request, 'register.html')
 
-# --- GIỎ HÀNG (SESSION) ---
 def cart_view(request):
-    cart = request.session.get('cart', {}) 
-    cart_items = []
-    total_price = 0
-    
-    for product_id, quantity in cart.items():
+    cart, items, total = request.session.get('cart', {}), [], 0
+    for p_id, qty in cart.items():
         try:
-            product = Product.objects.get(id=product_id)
-            total = product.price * quantity
-            total_price += total
-            cart_items.append({
-                'product': product,
-                'quantity': quantity,
-                'total': total
-            })
-        except Product.DoesNotExist:
-            continue
-
-    return render(request, 'cart.html', {'cart_items': cart_items, 'total_price': total_price})
+            p = Product.objects.get(id=p_id)
+            items.append({'product': p, 'quantity': qty, 'total': p.price * qty})
+            total += p.price * qty
+        except: continue
+    return render(request, 'cart.html', {'cart_items': items, 'total_price': total})
 
 def cart_add(request):
     if request.method == 'POST':
-        p_id = request.POST.get('product_id')
-        qty = int(request.POST.get('quantity', 1))
+        p_id, qty = request.POST.get('product_id'), int(request.POST.get('quantity', 1))
         cart = request.session.get('cart', {})
-        
-        if p_id in cart:
-            cart[p_id] += qty 
-        else:
-            cart[p_id] = qty  
-            
-        request.session['cart'] = cart 
-        return redirect('cart')
-    return redirect('home')
+        cart[p_id] = cart.get(p_id, 0) + qty
+        request.session['cart'] = cart
+    return redirect('cart')
 
 def cart_remove(request):
     if request.method == 'POST':
-        p_id = request.POST.get('product_id')
         cart = request.session.get('cart', {})
-        if p_id in cart:
-            del cart[p_id]
-            request.session['cart'] = cart
+        cart.pop(request.POST.get('product_id'), None)
+        request.session['cart'] = cart
     return redirect('cart')
 
-# --- THANH TOÁN & TẠO ĐƠN (Đã cập nhật logic Phí Ship) ---
-@login_required(login_url='/login/')
+@login_required
 def checkout(request):
     if request.method == 'POST':
-        address = request.POST.get('address', 'Địa chỉ mặc định')
-        lat = request.POST.get('lat')
-        lon = request.POST.get('lon')
-        
-        # 1. Lấy phí ship từ form gửi lên (convert sang int)
-        try:
-            shipping_fee = int(float(request.POST.get('shipping_fee', 0)))
-        except ValueError:
-            shipping_fee = 0
-
-        # 2. Tạo đơn hàng (Lưu tạm total=0)
-        new_order = Order.objects.create(
-            user=request.user,
-            shipping_address=address,
-            customer_lat=float(lat) if lat else None,
-            customer_lon=float(lon) if lon else None,
-            status='CHỜ XÁC NHẬN',
-            shipping_fee=shipping_fee, # Lưu phí ship
-            total_amount=0 
-        )
-        
-        # 3. Lưu chi tiết sản phẩm & Tính tổng tiền hàng
-        cart = request.session.get('cart', {})
-        product_total = 0 # Tổng tiền hàng
-        
+        order = Order.objects.create(user=request.user, shipping_address=request.POST.get('address'), shipping_fee=int(float(request.POST.get('shipping_fee', 0))))
+        cart, total = request.session.get('cart', {}), 0
         for p_id, qty in cart.items():
-            try:
-                prod = Product.objects.get(id=p_id)
-                OrderItem.objects.create(
-                    order=new_order,
-                    product=prod,
-                    quantity=qty,
-                    price_at_purchase=prod.price
-                )
-                product_total += prod.price * qty
-            except Product.DoesNotExist:
-                continue
-            
-        # 4. CẬP NHẬT TỔNG TIỀN (Hàng + Ship)
-        new_order.total_amount = product_total + shipping_fee
-        new_order.save()
-        
-        # Xóa giỏ và thông báo
-        request.session['cart'] = {}
-        messages.success(request, 'Đặt hàng thành công!')
-        return redirect('home')
-
+            p = Product.objects.get(id=p_id)
+            OrderItem.objects.create(order=order, product=p, quantity=qty, price_at_purchase=p.price)
+            total += p.price * qty
+        order.total_amount = total + order.shipping_fee; order.save()
+        request.session['cart'] = {}; return redirect('home')
     return redirect('cart')
 
-
 # ==========================================
-# 2. ADMIN (QUẢN LÝ)
+# 3. ADMIN & GIS
 # ==========================================
 
 @login_required
-def dashboard(request):
-    return render(request, 'admin/dashboard.html')
+def dashboard(request): return render(request, 'admin/dashboard.html')
 
-# --- SẢN PHẨM ---
-def products_list(request):
-    products = Product.objects.all().order_by('-id')
-    return render(request, 'admin/products.html', {'products': products})
+def products_list(request): return render(request, 'admin/products.html', {'products': Product.objects.all().order_by('-id')})
 
 def product_form(request, id=None):
-    categories = Category.objects.all()
-    product = None
-    if id:
-        product = get_object_or_404(Product, id=id)
-    return render(request, 'admin/product-form.html', {
-        'categories': categories,
-        'product': product
-    })
+    return render(request, 'admin/product-form.html', {'categories': Category.objects.all(), 'product': get_object_or_404(Product, id=id) if id else None})
 
 def product_save(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        price_raw = request.POST.get('price', '0')
-        stock_raw = request.POST.get('stock_quantity', '0')
-        unit = request.POST.get('unit')
-        image = request.POST.get('image_url')
-        cat_id = request.POST.get('category_id')
-        prod_id = request.POST.get('id')
+        name, price_raw, stock, unit = request.POST.get('name'), request.POST.get('price', '0').replace('.', ''), request.POST.get('stock_quantity', '0'), request.POST.get('unit')
+        cat = Category.objects.get(id=request.POST.get('category_id'))
+        desc, prod_id = request.POST.get('description', ''), request.POST.get('id')
+        main_img, gallery = request.FILES.get('image'), request.FILES.getlist('gallery_images')
 
-        try:
-            price = int(str(price_raw).replace('.', '').replace(',', ''))
-        except ValueError:
-            price = 0
-            
-        try:
-            stock = int(str(stock_raw).replace('.', '').replace(',', ''))
-        except ValueError:
-            stock = 0
-
-        cat = Category.objects.get(id=cat_id)
-
-        if prod_id: # Sửa
-            prod = Product.objects.get(id=prod_id)
-            prod.name = name
-            prod.price = price
-            prod.unit = unit
-            prod.stock_quantity = stock
-            prod.category = cat
-            prod.image_url = image
-            prod.save()
-        else: # Thêm mới
-            Product.objects.create(
-                name=name, price=price, unit=unit, stock_quantity=stock,
-                category=cat, image_url=image or 'https://via.placeholder.com/150'
-            )
-            
-        return redirect('products')
+        if prod_id:
+            p = Product.objects.get(id=prod_id)
+            p.name, p.price, p.unit, p.stock_quantity, p.category, p.description = name, int(price_raw), unit, int(stock), cat, desc
+            if main_img: p.image = main_img
+            p.save()
+        else:
+            p = Product.objects.create(name=name, price=int(price_raw), unit=unit, stock_quantity=int(stock), category=cat, image=main_img, description=desc)
+        
+        for img in gallery: ProductImage.objects.create(product=p, image=img)
     return redirect('products')
 
-def product_delete(request, id):
-    get_object_or_404(Product, id=id).delete()
-    return redirect('products')
-
-# --- DANH MỤC ---
-def categories_list(request):
-    cats = Category.objects.all()
-    return render(request, 'admin/categories.html', {'categories': cats})
-
-def category_form(request):
-    return render(request, 'admin/category-form.html')
-
+def product_delete(request, id): get_object_or_404(Product, id=id).delete(); return redirect('products')
+def categories_list(request): return render(request, 'admin/categories.html', {'categories': Category.objects.all()})
+def category_form(request): return render(request, 'admin/category-form.html')
 def category_save(request):
-    if request.method == 'POST':
-        Category.objects.create(name=request.POST.get('name'))
-        return redirect('categories')
+    if request.method == 'POST': Category.objects.create(name=request.POST.get('name'))
     return redirect('categories')
-
-def category_delete(request, id):
-    get_object_or_404(Category, id=id).delete()
-    return redirect('categories')
-
-# --- KHO HÀNG (GIS) ---
-def warehouse_list(request):
-    warehouses = Warehouse.objects.all()
-    return render(request, 'admin/warehouses.html', {'warehouses': warehouses})
-
-# --- ĐƠN HÀNG ---
-def orders_list(request):
-    orders = Order.objects.all().order_by('-order_date')
-    return render(request, 'admin/orders.html', {'orders': orders})
-
+def category_delete(request, id): get_object_or_404(Category, id=id).delete(); return redirect('categories')
+def warehouse_list(request): return render(request, 'admin/warehouses.html', {'warehouses': Warehouse.objects.all()})
+def orders_list(request): return render(request, 'admin/orders.html', {'orders': Order.objects.all().order_by('-order_date')})
 def order_update_status(request):
     if request.method == 'POST':
-        order = get_object_or_404(Order, id=request.POST.get('id'))
-        order.status = request.POST.get('status')
-        order.save()
+        o = get_object_or_404(Order, id=request.POST.get('id'))
+        o.status = request.POST.get('status'); o.save()
     return redirect('orders')
+def users_list(request): return render(request, 'admin/users.html', {'users': User.objects.filter(is_superuser=False)})
+def user_delete(request, id): get_object_or_404(User, id=id).delete(); return redirect('users')
 
-# --- USER ---
-def users_list(request):
-    users = User.objects.filter(is_superuser=False).order_by('-date_joined')
-    return render(request, 'admin/users.html', {'users': users})
-
-def user_delete(request, id):
-    user = get_object_or_404(User, id=id)
-    if not user.is_superuser:
-        user.delete()
-        messages.success(request, 'Đã xóa khách hàng thành công!')
-    else:
-        messages.error(request, 'Không thể xóa tài khoản Admin!')
-    return redirect('users')
-
-# --- BẢN ĐỒ ADMIN (MARKER CLUSTERING) ---
-@login_required
-def admin_map_view(request):
-    if not request.user.is_staff:
-        return redirect('home')
-    return render(request, 'admin/map_clustering.html')
-
-def api_orders_locations(request):
-    orders = Order.objects.exclude(status__in=['ĐÃ GIAO', 'ĐÃ HỦY'])\
-                          .exclude(customer_lat__isnull=True)
-    
-    data = []
-    for order in orders:
-        data.append({
-            'id': order.id,
-            'customer': order.user.username,
-            'lat': order.customer_lat,
-            'lon': order.customer_lon,
-            'address': order.shipping_address,
-            'total': order.total_amount,
-            'status': order.status,
-            'url_detail': f"/orders/"
-        })
-        
-    return JsonResponse({'orders': data})
-
-
-# --- API TÍNH PHÍ VẬN CHUYỂN (GIS) ---
 def api_calculate_shipping(request):
     if request.method == 'POST':
-        try:
-            customer_lat = request.POST.get('lat')
-            customer_lng = request.POST.get('lng')
-            
-            warehouse = Warehouse.objects.first()
-            if not warehouse:
-                return JsonResponse({'error': 'Chưa thiết lập kho hàng trong Database'}, status=400)
+        w = Warehouse.objects.first()
+        res = requests.get(f"http://router.project-osrm.org/route/v1/driving/{w.longitude},{w.latitude};{request.POST.get('lng')},{request.POST.get('lat')}?overview=false").json()
+        if res.get('code') == 'Ok':
+            dist = res['routes'][0]['distance'] / 1000
+            fee = w.base_fee + (dist * w.fee_per_km)
+            return JsonResponse({'status': 'success', 'distance': round(dist, 2), 'fee': int(round(fee, -2))})
+    return JsonResponse({'error': 'Error'}, status=400)
 
-            osrm_url = f"http://router.project-osrm.org/route/v1/driving/{warehouse.longitude},{warehouse.latitude};{customer_lng},{customer_lat}?overview=false"
-            
-            response = requests.get(osrm_url)
-            data = response.json()
-
-            if data.get('code') == 'Ok':
-                distance_km = data['routes'][0]['distance'] / 1000
-                
-                # Tính phí: Base Fee + (Số Km * Fee per Km)
-                total_fee = warehouse.base_fee + (distance_km * warehouse.fee_per_km)
-                
-                return JsonResponse({
-                    'status': 'success',
-                    'distance': round(distance_km, 2),
-                    'fee': int(round(total_fee, -2)), # Chuyển thành số nguyên (VNĐ)
-                    'warehouse': warehouse.name
-                })
-            else:
-                return JsonResponse({'error': 'Không tìm thấy đường đi'}, status=400)
-                
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-def shipping_page(request):
-    return render(request, 'shipping.html')
+def shipping_page(request): return render(request, 'shipping.html')
+def admin_map_view(request): return render(request, 'admin/map_clustering.html')
+def api_orders_locations(request):
+    orders = Order.objects.exclude(status__in=['ĐÃ GIAO', 'ĐÃ HỦY']).exclude(customer_lat__isnull=True)
+    data = [{'id': o.id, 'customer': o.user.username, 'lat': o.customer_lat, 'lon': o.customer_lon, 'status': o.status} for o in orders]
+    return JsonResponse({'orders': data})

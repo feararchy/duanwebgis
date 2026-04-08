@@ -70,7 +70,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'webgis_db',      # Tên DB bạn tạo trong pgAdmin
         'USER': 'postgres',       # User mặc định
-        'PASSWORD': '1',          # Mật khẩu của bạn
+        'PASSWORD': '123456',          # Mật khẩu của bạn
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -103,3 +103,11 @@ STATICFILES_DIRS = [
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+import os
+
+# Đường dẫn URL để truy cập ảnh trên web
+MEDIA_URL = '/media/'
+
+# Thư mục vật lý trên máy tính để lưu ảnh upload
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

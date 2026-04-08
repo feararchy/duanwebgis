@@ -1,51 +1,119 @@
 {% extends 'layout.html' %}
 {% load static %}
-{% load humanize %} {% block content %}
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-6">
-                <img src="{{ product.image_url|default:'https://via.placeholder.com/600' }}" 
-                     class="img-fluid rounded shadow w-100" 
-                     alt="{{ product.name }}">
-            </div>
+{% load humanize %} 
 
-            <div class="col-md-6">
-                <h2 class="fw-bold">{{ product.name }}</h2>
-                
-                <span class="badge bg-warning text-dark mb-3">
-                    {{ product.category.name|default:"Vật liệu xây dựng" }}
-                </span>
-                
-                <h3 class="text-danger fw-bold mb-3">
-                    {{ product.price|intcomma }} VNĐ / {{ product.unit }}
-                </h3>
-                
-                <p class="fs-5 text-secondary">{{ product.description }}</p>
-                
-                <p>Kho còn: <strong>{{ product.stock_quantity }}</strong></p>
-                
-                <hr>
-                
-                <form action="{% url 'cart_add' %}" method="post" class="d-flex align-items-center gap-3">
-                    
-                    {% csrf_token %}
-                    
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                    
-                    <div class="input-group w-25">
-                        <span class="input-group-text">SL</span>
-                        <input type="number" name="quantity" value="1" min="1" class="form-control text-center">
+{% block content %}
+<div class="container mt-5">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div id="productCarousel" class="carousel slide shadow rounded" data-bs-ride="carousel">
+                <div class="carousel-inner rounded">
+                    <div class="carousel-item active">
+                        <img src="{{ product.image_url|default:'https://via.placeholder.com/600' }}" class="d-block w-100" alt="Main" style="height: 400px; object-fit: cover;">
                     </div>
-                    
-                    <button type="submit" class="btn btn-success btn-lg flex-grow-1">
-                        <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
-                    </button>
-                </form>
-                
-                <a href="{% url 'home' %}" class="btn btn-link mt-3 text-decoration-none">
-                    <i class="bi bi-arrow-left"></i> Quay lại mua sắm
-                </a>
+                    {% for img in product.images.all %}
+                    <div class="carousel-item">
+                        <img src="{{ img.image_url }}" class="d-block w-100" alt="Sub" style="height: 400px; object-fit: cover;">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if product.images.count > 0 %}
+                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
+                </button>
+                {% endif %}
             </div>
         </div>
+
+        <div class="col-md-6">
+            <h2 class="fw-bold">{{ product.name }}</h2>
+            <span class="badge bg-warning text-dark mb-3">{{ product.category.name|default:"Vật liệu xây dựng" }}</span>
+            <h3 class="text-danger fw-bold mb-3">{{ product.price|intcomma }} VNĐ / {{ product.unit }}</h3>
+            <p class="fs-5 text-secondary">{{ product.description }}</p>
+            <p>Kho còn: <strong>{{ product.stock_quantity }}</strong></p>
+            <hr>
+            
+            <form action="{% url 'cart_add' %}" method="post" class="d-flex align-items-center gap-3">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <div class="input-group w-25">
+                    <span class="input-group-text">SL</span>
+                    <input type="number" name="quantity" value="1" min="1" class="form-control text-center">
+                </div>
+                <button type="submit" class="btn btn-success btn-lg flex-grow-1">
+                    <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
+                </button>
+            </form>
+            <a href="{% url 'home' %}" class="btn btn-link mt-3 text-decoration-none"><i class="bi bi-arrow-left"></i> Quay lại mua sắm</a>
+        </div>
     </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <h4 class="border-bottom pb-2">Đánh giá sản phẩm</h4>
+            
+            <div class="mb-4">
+                {% for review in reviews %}
+                <div class="card mb-2 border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <strong><i class="bi bi-person-circle"></i> {{ review.user.username }}</strong>
+                            <span class="text-warning">
+                                {% for i in "12345"|make_list %}
+                                    <i class="bi bi-star{% if forloop.counter <= review.stars %}-fill{% endif %}"></i>
+                                {% endfor %}
+                            </span>
+                        </div>
+                        <p class="mt-2 mb-0 text-muted">{{ review.comment }}</p>
+                        <small class="text-muted" style="font-size: 0.8rem;">{{ review.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                </div>
+                {% empty %}
+                    <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</p>
+                {% endfor %}
+            </div>
+
+            {% if user.is_authenticated %}
+                {% if has_reviewed %}
+                    <div class="alert alert-info">Bạn đã đánh giá sản phẩm này. Mỗi tài khoản chỉ được đánh giá 1 lần.</div>
+                {% else %}
+                    <div class="card bg-light border-0 p-3">
+                        <form action="{% url 'add_review' product.id %}" method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Chọn số sao:</label>
+                                <select name="stars" class="form-select w-25" required>
+                                    <option value="5">⭐⭐⭐⭐⭐ (5/5 Rất tốt)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4/5 Tốt)</option>
+                                    <option value="3">⭐⭐⭐ (3/5 Bình thường)</option>
+                                    <option value="2">⭐⭐ (2/5 Tệ)</option>
+                                    <option value="1">⭐ (1/5 Rất tệ)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nhận xét của bạn:</label>
+                                <textarea name="comment" class="form-control" rows="3" placeholder="Chia sẻ cảm nhận về chất lượng vật liệu..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> Gửi đánh giá</button>
+                        </form>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-warning"><a href="{% url 'login' %}" class="alert-link">Đăng nhập</a> để viết đánh giá cho sản phẩm.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}
