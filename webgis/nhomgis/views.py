@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import Product, Category, Order, OrderItem, Warehouse, ProductImage, Review, Post, StoreReview
 import requests
 from django.http import JsonResponse
@@ -157,7 +157,7 @@ def cart_remove(request):
         request.session['cart'] = cart
     return redirect('cart')
 
-@login_required
+@login_required(login_url='/login/')
 def checkout(request):
     if request.method == 'POST':
         order = Order.objects.create(user=request.user, shipping_address=request.POST.get('address'), shipping_fee=int(float(request.POST.get('shipping_fee', 0))))
@@ -171,55 +171,14 @@ def checkout(request):
     return redirect('cart')
 
 # ==========================================
-# 3. ADMIN & GIS
+# 3. GIS API (BẢN ĐỒ & VẬN CHUYỂN)
 # ==========================================
-
-@login_required
-def dashboard(request): return render(request, 'admin/dashboard.html')
-
-def products_list(request): return render(request, 'admin/products.html', {'products': Product.objects.all().order_by('-id')})
-
-def product_form(request, id=None):
-    return render(request, 'admin/product-form.html', {'categories': Category.objects.all(), 'product': get_object_or_404(Product, id=id) if id else None})
-
-def product_save(request):
-    if request.method == 'POST':
-        name, price_raw, stock, unit = request.POST.get('name'), request.POST.get('price', '0').replace('.', ''), request.POST.get('stock_quantity', '0'), request.POST.get('unit')
-        cat = Category.objects.get(id=request.POST.get('category_id'))
-        desc, prod_id = request.POST.get('description', ''), request.POST.get('id')
-        main_img, gallery = request.FILES.get('image'), request.FILES.getlist('gallery_images')
-
-        if prod_id:
-            p = Product.objects.get(id=prod_id)
-            p.name, p.price, p.unit, p.stock_quantity, p.category, p.description = name, int(price_raw), unit, int(stock), cat, desc
-            if main_img: p.image = main_img
-            p.save()
-        else:
-            p = Product.objects.create(name=name, price=int(price_raw), unit=unit, stock_quantity=int(stock), category=cat, image=main_img, description=desc)
-        
-        for img in gallery: ProductImage.objects.create(product=p, image=img)
-    return redirect('products')
-
-def product_delete(request, id): get_object_or_404(Product, id=id).delete(); return redirect('products')
-def categories_list(request): return render(request, 'admin/categories.html', {'categories': Category.objects.all()})
-def category_form(request): return render(request, 'admin/category-form.html')
-def category_save(request):
-    if request.method == 'POST': Category.objects.create(name=request.POST.get('name'))
-    return redirect('categories')
-def category_delete(request, id): get_object_or_404(Category, id=id).delete(); return redirect('categories')
-def warehouse_list(request): return render(request, 'admin/warehouses.html', {'warehouses': Warehouse.objects.all()})
-def orders_list(request): return render(request, 'admin/orders.html', {'orders': Order.objects.all().order_by('-order_date')})
-def order_update_status(request):
-    if request.method == 'POST':
-        o = get_object_or_404(Order, id=request.POST.get('id'))
-        o.status = request.POST.get('status'); o.save()
-    return redirect('orders')
-def users_list(request): return render(request, 'admin/users.html', {'users': User.objects.filter(is_superuser=False)})
-def user_delete(request, id): get_object_or_404(User, id=id).delete(); return redirect('users')
 
 def api_calculate_shipping(request):
     if request.method == 'POST':
         w = Warehouse.objects.first()
+        if not w:
+            return JsonResponse({'error': 'Chưa có kho hàng'}, status=400)
         res = requests.get(f"http://router.project-osrm.org/route/v1/driving/{w.longitude},{w.latitude};{request.POST.get('lng')},{request.POST.get('lat')}?overview=false").json()
         if res.get('code') == 'Ok':
             dist = res['routes'][0]['distance'] / 1000
@@ -227,8 +186,106 @@ def api_calculate_shipping(request):
             return JsonResponse({'status': 'success', 'distance': round(dist, 2), 'fee': int(round(fee, -2))})
     return JsonResponse({'error': 'Error'}, status=400)
 
-def shipping_page(request): return render(request, 'shipping.html')
-def admin_map_view(request): return render(request, 'admin/map_clustering.html')
+def shipping_page(request): 
+    return render(request, 'shipping.html')
+
+# ==========================================
+# 4. ADMIN (QUẢN LÝ) - ĐÃ BẢO MẬT TUYỆT ĐỐI
+# ==========================================
+
+# Trạm gác kiểm tra quyền Admin
+def is_admin(user):
+    return user.is_authenticated and user.is_staff
+
+@user_passes_test(is_admin, login_url='/login/')
+def dashboard(request): 
+    return render(request, 'admin/dashboard.html')
+
+@user_passes_test(is_admin, login_url='/login/')
+def products_list(request): 
+    return render(request, 'admin/products.html', {'products': Product.objects.all().order_by('-id')})
+
+@user_passes_test(is_admin, login_url='/login/')
+def product_form(request, id=None):
+    return render(request, 'admin/product-form.html', {'categories': Category.objects.all(), 'product': get_object_or_404(Product, id=id) if id else None})
+
+@user_passes_test(is_admin, login_url='/login/')
+def product_save(request):
+    if request.method == 'POST':
+        name, price_raw, stock, unit = request.POST.get('name'), request.POST.get('price', '0').replace('.', ''), request.POST.get('stock_quantity', '0'), request.POST.get('unit')
+        cat = Category.objects.get(id=request.POST.get('category_id'))
+        desc, prod_id = request.POST.get('description', ''), request.POST.get('id')
+        main_img, gallery = request.FILES.get('image'), request.FILES.getlist('gallery_images')
+
+        try: price = int(price_raw)
+        except ValueError: price = 0
+        try: stock = int(stock)
+        except ValueError: stock = 0
+
+        if prod_id:
+            p = Product.objects.get(id=prod_id)
+            p.name, p.price, p.unit, p.stock_quantity, p.category, p.description = name, price, unit, stock, cat, desc
+            if main_img: p.image = main_img
+            p.save()
+        else:
+            p = Product.objects.create(name=name, price=price, unit=unit, stock_quantity=stock, category=cat, image=main_img, description=desc)
+        
+        for img in gallery: ProductImage.objects.create(product=p, image=img)
+    return redirect('products')
+
+@user_passes_test(is_admin, login_url='/login/')
+def product_delete(request, id): 
+    get_object_or_404(Product, id=id).delete()
+    return redirect('products')
+
+@user_passes_test(is_admin, login_url='/login/')
+def categories_list(request): 
+    return render(request, 'admin/categories.html', {'categories': Category.objects.all()})
+
+@user_passes_test(is_admin, login_url='/login/')
+def category_form(request): 
+    return render(request, 'admin/category-form.html')
+
+@user_passes_test(is_admin, login_url='/login/')
+def category_save(request):
+    if request.method == 'POST': 
+        Category.objects.create(name=request.POST.get('name'))
+    return redirect('categories')
+
+@user_passes_test(is_admin, login_url='/login/')
+def category_delete(request, id): 
+    get_object_or_404(Category, id=id).delete()
+    return redirect('categories')
+
+@user_passes_test(is_admin, login_url='/login/')
+def warehouse_list(request): 
+    return render(request, 'admin/warehouses.html', {'warehouses': Warehouse.objects.all()})
+
+@user_passes_test(is_admin, login_url='/login/')
+def orders_list(request): 
+    return render(request, 'admin/orders.html', {'orders': Order.objects.all().order_by('-order_date')})
+
+@user_passes_test(is_admin, login_url='/login/')
+def order_update_status(request):
+    if request.method == 'POST':
+        o = get_object_or_404(Order, id=request.POST.get('id'))
+        o.status = request.POST.get('status'); o.save()
+    return redirect('orders')
+
+@user_passes_test(is_admin, login_url='/login/')
+def users_list(request): 
+    return render(request, 'admin/users.html', {'users': User.objects.filter(is_superuser=False)})
+
+@user_passes_test(is_admin, login_url='/login/')
+def user_delete(request, id): 
+    get_object_or_404(User, id=id).delete()
+    return redirect('users')
+
+@user_passes_test(is_admin, login_url='/login/')
+def admin_map_view(request): 
+    return render(request, 'admin/map_clustering.html')
+
+@user_passes_test(is_admin, login_url='/login/')
 def api_orders_locations(request):
     orders = Order.objects.exclude(status__in=['ĐÃ GIAO', 'ĐÃ HỦY']).exclude(customer_lat__isnull=True)
     data = [{'id': o.id, 'customer': o.user.username, 'lat': o.customer_lat, 'lon': o.customer_lon, 'status': o.status} for o in orders]
