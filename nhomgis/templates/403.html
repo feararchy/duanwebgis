@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-shield-lock-fill text-danger" style="font-size: 5rem;"></i>
+    </div>
+    <h1 class="display-4 fw-bold">TRUY CẬP BỊ TỪ CHỐI</h1>
+    <p class="fs-5 text-secondary">Xin lỗi Cường, bạn không có quyền truy cập vào khu vực Quản trị này.</p>
+    <a href="{% url 'home' %}" class="btn btn-outline-danger px-5 rounded-pill fw-bold">Quay lại an toàn</a>
+</div>
+{% endblock %}

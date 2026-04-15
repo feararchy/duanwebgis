@@ -1,0 +1,218 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    /* CSS cho hộp gợi ý địa chỉ */
+    #suggestion-box {
+        position: absolute;
+        z-index: 1000;
+        width: 100%;
+        max-height: 300px;
+        overflow-y: auto;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        border-radius: 0 0 8px 8px;
+        border: 1px solid #dee2e6;
+        border-top: none;
+    }
+    .suggestion-item {
+        cursor: pointer;
+        padding: 12px 15px;
+        background: #fff;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+    .suggestion-item:hover {
+        background-color: #e9ecef;
+        color: #0d6efd;
+    }
+    .suggestion-item strong {
+        display: block;
+        font-size: 15px;
+        color: #212529;
+    }
+    .suggestion-item small {
+        color: #6c757d;
+    }
+    #map {
+        height: 550px;
+        width: 100%;
+        z-index: 1;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between mb-3">
+        <h3 class="fw-bold">{% if warehouse %}Chỉnh sửa kho: {{ warehouse.name }}{% else %}Thêm kho hàng mới{% endif %}</h3>
+        <a href="{% url 'warehouses' %}" class="btn btn-secondary shadow-sm">Quay lại</a>
+    </div>
+    <hr>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <form action="{% url 'warehouse_save' %}" method="POST" class="bg-white p-4 shadow-sm rounded border">
+                {% csrf_token %}
+                <input type="hidden" name="id" value="{{ warehouse.id|default:'' }}">
+                
+                <div class="mb-3">
+                    <label class="fw-bold">Tên kho hàng:</label>
+                    <input type="text" name="name" class="form-control" value="{{ warehouse.name }}" placeholder="VD: Kho Vật Liệu A" required>
+                </div>
+
+                <div class="mb-3 position-relative">
+                    <label class="fw-bold text-primary">Địa chỉ kho (Gõ để hiện gợi ý):</label>
+                    <div class="input-group">
+                        <input type="text" name="address" id="w_address" class="form-control border-primary" 
+                               value="{{ warehouse.address }}" placeholder="Tên đường, Quận, Thành phố..." 
+                               autocomplete="off" oninput="handleInput(this)">
+                        <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
+                    </div>
+                    <small class="text-danger mt-1 fw-bold d-block"><i class="bi bi-lightbulb"></i> Mẹo: Hãy gõ thêm tên Tỉnh/Thành phố (VD: Lê Văn Sỹ, Tân Bình, HCM) để chính xác 100%.</small>
+                    
+                    <div id="suggestion-box" class="list-group d-none"></div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Vĩ độ (Lat):</label>
+                        <input type="text" name="latitude" id="w_lat" class="form-control bg-light" value="{{ warehouse.latitude|default:'' }}" required readonly>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Kinh độ (Lon):</label>
+                        <input type="text" name="longitude" id="w_lon" class="form-control bg-light" value="{{ warehouse.longitude|default:'' }}" required readonly>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Phí cố định (đ):</label>
+                        <input type="number" name="base_fee" class="form-control" value="{{ warehouse.base_fee|default:15000 }}">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="fw-bold">Phí mỗi KM (đ):</label>
+                        <input type="number" name="fee_per_km" class="form-control" value="{{ warehouse.fee_per_km|default:5000 }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 fw-bold btn-lg shadow mt-2"><i class="bi bi-save"></i> LƯU KHO HÀNG</button>
+            </form>
+        </div>
+        
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-geo-alt-fill text-danger"></i> Bản đồ vị trí</span>
+                    <small class="fw-normal">Click vào bản đồ để chọn thủ công</small>
+                </div>
+                <div id="map" class="rounded-bottom border"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // 1. Khởi tạo bản đồ
+    var initialLat = parseFloat("{% if warehouse and warehouse.latitude %}{{ warehouse.latitude }}{% else %}10.762622{% endif %}");
+    var initialLon = parseFloat("{% if warehouse and warehouse.longitude %}{{ warehouse.longitude }}{% else %}106.660172{% endif %}");
+    
+    var map = L.map('map').setView([initialLat, initialLon], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    var marker;
+    if ("{{ warehouse.id|default:'' }}" !== "") {
+        marker = L.marker([initialLat, initialLon]).addTo(map);
+    }
+
+    function updateMarker(lat, lon, address) {
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lon]).addTo(map);
+        map.setView([lat, lon], 17); // Zoom sát vào để thấy rõ đường
+        
+        document.getElementById('w_lat').value = parseFloat(lat).toFixed(6);
+        document.getElementById('w_lon').value = parseFloat(lon).toFixed(6);
+        if (address) document.getElementById('w_address').value = address;
+    }
+
+    // 2. Xử lý Gợi ý Địa chỉ Thông minh (Có bọc Smart Query)
+    let searchTimeout;
+    function handleInput(input) {
+        clearTimeout(searchTimeout);
+        let query = input.value.trim();
+        const suggestionBox = document.getElementById('suggestion-box');
+
+        if (query.length < 3) {
+            suggestionBox.classList.add('d-none');
+            return;
+        }
+
+        // --- SMART QUERY PROCESSING ---
+        // Giúp OSM hiểu ý định tìm kiếm nếu người dùng quên gõ chữ HCM
+        let apiQuery = query;
+        let lowerQuery = query.toLowerCase();
+        
+        // Nếu tìm đường ở Tân Bình mà quên ghi HCM, tự động kẹp thêm để API không mò ra Thủ Đức
+        if ((lowerQuery.includes("tân bình") || lowerQuery.includes("quận 1") || lowerQuery.includes("quận 3")) 
+            && !lowerQuery.includes("hồ chí minh") && !lowerQuery.includes("hcm")) {
+            apiQuery += ", Hồ Chí Minh";
+        }
+
+        // Đợi 600ms (Debounce) để người dùng gõ xong mới gọi API
+        searchTimeout = setTimeout(() => {
+            // Thêm tham số addressdetails=1 và accept-language=vi
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(apiQuery)}&limit=8&countrycodes=vn&accept-language=vi&addressdetails=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        suggestionBox.innerHTML = '';
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'suggestion-item';
+                            
+                            // Phân tách tên chính (đường/trường học) và địa chỉ phụ
+                            let mainName = item.name || "Địa điểm";
+                            let fullAddress = item.display_name;
+                            
+                            div.innerHTML = `<strong><i class="bi bi-geo-alt-fill text-danger"></i> ${mainName}</strong><small>${fullAddress}</small>`;
+                            
+                            div.onclick = () => {
+                                updateMarker(item.lat, item.lon, item.display_name);
+                                suggestionBox.classList.add('d-none');
+                            };
+                            suggestionBox.appendChild(div);
+                        });
+                        suggestionBox.classList.remove('d-none');
+                    } else {
+                        suggestionBox.innerHTML = `<div class="suggestion-item text-muted"><i class="bi bi-exclamation-triangle"></i> Không tìm thấy kết quả. Vui lòng gõ đầy đủ tên đường + Quận + Thành phố.</div>`;
+                        suggestionBox.classList.remove('d-none');
+                    }
+                });
+        }, 600);
+    }
+
+    // 3. Click bản đồ để chọn thủ công
+    map.on('click', function(e) {
+        const { lat, lng } = e.latlng;
+        updateMarker(lat, lng);
+        
+        document.getElementById('w_address').value = "Đang lấy tên đường...";
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.display_name) document.getElementById('w_address').value = data.display_name;
+            });
+    });
+
+    setTimeout(() => map.invalidateSize(), 500);
+    
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('w_address').contains(e.target)) {
+            document.getElementById('suggestion-box').classList.add('d-none');
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,198 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tính phí vận chuyển thực tế</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <style>
+        #map { height: 500px; width: 100%; border-radius: 10px; z-index: 1; }
+        .info-panel { padding: 15px; background: #f8f9fa; border: 1px solid #ddd; margin-bottom: 10px; }
+        .leaflet-control-geocoder {
+            min-width: 350px !important;
+            border: 2px solid #007bff !important;
+            z-index: 1000 !important;
+            background: white !important;
+        }
+        .leaflet-control-geocoder-form input {
+            width: 100% !important;
+            font-size: 14px !important;
+            padding: 8px !important;
+            color: black !important;
+        }
+        :root {
+        --primary-color: #007bff;
+        --text-dark: #333;
+        --bg-light: #f4f7f6;
+    }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* Khung thông tin */
+        .info-panel {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .info-panel b { color: var(--primary-color); }
+
+        #result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #eef2f7;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+
+        /* Bản đồ */
+        #map { 
+            height: 550px; 
+            width: 100%; 
+            max-width: 900px;
+            border-radius: 15px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 1; 
+        }
+
+        /* Tùy chỉnh thanh tìm kiếm Leaflet Geocoder */
+        .leaflet-control-geocoder {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+            border-radius: 8px !important;
+            overflow: hidden;
+        }
+
+        .leaflet-control-geocoder-form input {
+            height: 40px !important;
+            padding: 0 15px !important;
+            font-size: 15px !important;
+            outline: none;
+        }
+
+        .leaflet-control-geocoder-icon {
+            width: 40px !important;
+            height: 40px !important;
+            background-size: 20px !important;
+        }
+
+        /* Responsive cho điện thoại */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            #map { height: 400px; }
+            .leaflet-control-geocoder {
+                min-width: 250px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Công cụ tính phí vận chuyển theo khoảng cách</h2>
+    <div class="info-panel">
+        <p><b>Hướng dẫn:</b> Nhập địa chỉ vào ô tìm kiếm trên bản đồ hoặc click trực tiếp vào bản đồ.</p>
+        <div id="result"><i>Chưa chọn vị trí...</i></div>
+    </div>
+    
+    <div id="map"></div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    
+    <script>
+        // Khởi tạo bản đồ
+        var map = L.map('map').setView([10.762622, 106.660172], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        var warehouseIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/407/407826.png',
+            iconSize: [38, 38]
+        });
+        L.marker([10.762622, 106.660172], {icon: warehouseIcon}).addTo(map).bindPopup("Kho hàng chính");
+
+        var routeLayer;
+        var customerMarker;
+
+        // HÀM TÍNH PHÍ DÙNG CHUNG
+        function calculateShipping(lat, lng) {
+            $('#result').html("Đang tính toán quãng đường...");
+            $.ajax({
+                url: '/api/calculate-shipping/', 
+                method: 'POST',
+                data: {
+                    'lat': lat,
+                    'lng': lng,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(res) {
+                    $('#result').html(`
+                        <b>Vận chuyển từ:</b> ${res.warehouse} <br>
+                        <b>Quãng đường:</b> ${res.distance} km <br>
+                        <b>Phí ship:</b> <span style="color:red">${res.fee.toLocaleString()} VNĐ</span>
+                    `);
+                    drawRoute(lat, lng);
+                },
+                error: function() {
+                    $('#result').html("<span style='color:red'>Lỗi hệ thống tính phí!</span>");
+                }
+            });
+        }
+
+        // THANH TÌM KIẾM 
+        var geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false,
+            placeholder: "Nhập địa chỉ của bạn tại đây...",
+            collapsed: false //Buộc ô nhập phải hiện ra luôn
+        })
+        .on('markgeocode', function(e) {
+            var latlng = e.geocode.center;
+            map.setView(latlng, 17);
+
+            if (customerMarker) { map.removeLayer(customerMarker); }
+            customerMarker = L.marker(latlng).addTo(map);
+
+            calculateShipping(latlng.lat, latlng.lng);
+        })
+        .addTo(map);
+
+        // Sự kiện Click bản đồ
+        map.on('click', function(e) {
+            if (customerMarker) { map.removeLayer(customerMarker); }
+            customerMarker = L.marker(e.latlng).addTo(map);
+            calculateShipping(e.latlng.lat, e.latlng.lng);
+        });
+
+        function drawRoute(destLat, destLng) {
+            if (routeLayer) { map.removeLayer(routeLayer); }
+            var url = `https://router.project-osrm.org/route/v1/driving/106.660172,10.762622;${destLng},${destLat}?geometries=geojson`;
+            fetch(url).then(r => r.json()).then(data => {
+                var coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                routeLayer = L.polyline(coords, {color: 'blue', weight: 5}).addTo(map);
+                map.fitBounds(routeLayer.getBounds(), {padding: [50, 50]});
+            });
+        }
+    </script>
+</body>
+</html>

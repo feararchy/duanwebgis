@@ -1,0 +1,74 @@
+{% extends 'layout.html' %}
+{% block content %}
+<style>
+    .admin-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 12px;
+    }
+    .admin-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-uppercase"><i class="bi bi-speedometer2 text-danger"></i> Bảng Điều Khiển Quản Trị</h2>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary rounded-pill shadow-sm"><i class="bi bi-house-door"></i> Về trang chủ</a>
+    </div>
+    
+    <div class="alert alert-success shadow-sm rounded-3">
+        <i class="bi bi-person-circle"></i> Xin chào Admin <b>{{ request.user.username }}</b>! Chúc bạn một ngày làm việc hiệu quả.
+    </div>
+
+    <div class="row g-4 mt-2">
+        <div class="col-md-4">
+            <a href="{% url 'orders' %}" class="card admin-card p-4 text-center text-decoration-none bg-danger bg-opacity-10 border-danger text-dark h-100 shadow-sm">
+                <i class="bi bi-cart-check fs-1 text-danger mb-3"></i>
+                <h5 class="fw-bold">Quản lý Đơn Hàng</h5>
+                <small class="text-muted">Duyệt và cập nhật trạng thái đơn</small>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'admin_map' %}" class="card admin-card p-4 text-center text-decoration-none bg-primary bg-opacity-10 border-primary text-dark h-100 shadow-sm">
+                <i class="bi bi-map-fill fs-1 text-primary mb-3"></i>
+                <h5 class="fw-bold">Bản Đồ Giao Hàng</h5>
+                <small class="text-muted">Theo dõi tuyến đường & định vị GIS</small>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'warehouses' %}" class="card admin-card p-4 text-center text-decoration-none bg-info bg-opacity-10 border-info text-dark h-100 shadow-sm">
+                <i class="bi bi-building fs-1 text-info mb-3"></i>
+                <h5 class="fw-bold">Hệ Thống Kho Hàng</h5>
+                <small class="text-muted">Thêm/Sửa tọa độ Kho trung tâm</small>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'products' %}" class="card admin-card p-4 text-center text-decoration-none bg-warning bg-opacity-10 border-warning text-dark h-100 shadow-sm">
+                <i class="bi bi-box-seam fs-1 text-warning mb-3"></i>
+                <h5 class="fw-bold">Sản Phẩm & Vật Liệu</h5>
+                <small class="text-muted">Thêm, sửa, xóa thông tin hàng hóa</small>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'categories' %}" class="card admin-card p-4 text-center text-decoration-none bg-success bg-opacity-10 border-success text-dark h-100 shadow-sm">
+                <i class="bi bi-tags fs-1 text-success mb-3"></i>
+                <h5 class="fw-bold">Danh Mục</h5>
+                <small class="text-muted">Phân loại các nhóm sản phẩm</small>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'users' %}" class="card admin-card p-4 text-center text-decoration-none bg-secondary bg-opacity-10 border-secondary text-dark h-100 shadow-sm">
+                <i class="bi bi-people fs-1 text-secondary mb-3"></i>
+                <h5 class="fw-bold">Khách Hàng</h5>
+                <small class="text-muted">Quản lý tài khoản người dùng</small>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

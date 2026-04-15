@@ -1,0 +1,87 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between mb-3 align-items-center">
+        <h3 class="fw-bold text-uppercase"><i class="bi bi-map-fill text-primary"></i> Bản Đồ Tuyến Đường & Kho</h3>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary shadow-sm">Quay lại Dashboard</a>
+    </div>
+    <hr>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex gap-4 bg-light p-2 rounded border">
+                <span class="fw-bold"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946770.png" width="25"> = Kho Hàng (Điểm xuất phát)</span>
+                <span class="fw-bold"><img src="https://cdn-icons-png.flaticon.com/512/3444/3444064.png" width="25"> = Đơn hàng (Điểm giao)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div id="adminMap" style="height: 650px; width: 100%; z-index: 1;" class="rounded"></div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // Khởi tạo bản đồ mặc định tại TP.HCM
+    var map = L.map('adminMap').setView([10.762622, 106.660172], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // 1. Cấu hình Icon cho KHO HÀNG
+    var warehouseIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/1946/1946770.png',
+        iconSize: [45, 45],
+        iconAnchor: [22, 45],
+        popupAnchor: [0, -40]
+    });
+
+    // 2. Cấu hình Icon cho ĐƠN HÀNG
+    var orderIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3444/3444064.png',
+        iconSize: [35, 35],
+        iconAnchor: [17, 35],
+        popupAnchor: [0, -35]
+    });
+
+    // Gọi API lấy TẤT CẢ dữ liệu (Kho + Đơn)
+    fetch('/api/orders-locations/')
+        .then(res => res.json())
+        .then(data => {
+            // Hiển thị các Kho Hàng lên bản đồ
+            if(data.warehouses && data.warehouses.length > 0) {
+                // Tự động focus bản đồ vào kho đầu tiên
+                map.setView([data.warehouses[0].lat, data.warehouses[0].lon], 12);
+                
+                data.warehouses.forEach(w => {
+                    L.marker([w.lat, w.lon], {icon: warehouseIcon}).addTo(map)
+                        .bindPopup(`
+                            <div class="text-center">
+                                <h6 class="fw-bold text-danger mb-1"><i class="bi bi-building"></i> ${w.name}</h6>
+                                <small>${w.address}</small>
+                            </div>
+                        `);
+                });
+            }
+
+            // Hiển thị các Đơn hàng chờ giao lên bản đồ
+            if(data.orders && data.orders.length > 0) {
+                data.orders.forEach(o => {
+                    L.marker([o.lat, o.lon], {icon: orderIcon}).addTo(map)
+                        .bindPopup(`
+                            <b><i class="bi bi-box-seam text-primary"></i> Đơn hàng #${o.id}</b><br>
+                            <b>Khách hàng:</b> ${o.customer}<br>
+                            <b>Trạng thái:</b> <span class="badge bg-warning text-dark">${o.status}</span><br>
+                            <b>Địa chỉ giao:</b> ${o.address || 'Chưa cập nhật'}
+                        `);
+                });
+            }
+        });
+
+    // Sửa lỗi màn hình xám khi load
+    setTimeout(() => map.invalidateSize(), 500);
+</script>
+{% endblock %}

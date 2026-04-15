@@ -1,0 +1,19 @@
+# Bỏ qua thư mục môi trường ảo (Nếu có cài trong dự án)
+venv/
+env/
+miniconda3/
+
+# Bỏ qua file rác của Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Bỏ qua cấu hình hệ điều hành
+.DS_Store
+Thumbs.db
+
+# ====================================================
+# ====================================================
+# db.sqlite3
+# media/

@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container text-center py-5">
+    <h1 class="display-1 fw-bold text-muted">404</h1>
+    <h2 class="fw-bold">KHÔNG TÌM THẤY TRANG</h2>
+    <p class="text-secondary">Đường dẫn bạn truy cập không tồn tại hoặc đã bị xóa.</p>
+    <a href="{% url 'home' %}" class="btn btn-primary px-5 rounded-pill shadow">Về trang chủ</a>
+</div>
+{% endblock %}

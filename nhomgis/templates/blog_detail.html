@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        
+        <div class="col-lg-8 col-md-10">
+            
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-decoration-none">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'blog_list' %}" class="text-decoration-none">Sổ tay</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Chi tiết bài viết</li>
+                </ol>
+            </nav>
+
+            <a href="{% url 'blog_list' %}" class="btn btn-sm btn-outline-secondary mb-4 rounded-pill">
+                <i class="bi bi-arrow-left"></i> Quay lại danh sách
+            </a>
+
+            <h1 class="fw-bold mb-3 lh-base text-dark">{{ post.title }}</h1>
+            
+            <div class="d-flex align-items-center text-muted mb-4 pb-3 border-bottom">
+                <div class="me-3">
+                    <i class="bi bi-person-circle fs-4 text-primary"></i>
+                </div>
+                <div>
+                    <span class="fw-bold text-dark">Kingmate Admin</span>
+                    <br>
+                    <small><i class="bi bi-calendar-event"></i> Đăng lúc: {{ post.created_at|date:"H:i - d/m/Y" }}</small>
+                </div>
+            </div>
+            
+            {% if post.thumbnail %}
+            <div class="text-center mb-5">
+                <img src="{{ post.thumbnail.url }}" class="img-fluid rounded shadow-sm w-100" alt="{{ post.title }}" style="max-height: 500px; object-fit: cover;">
+            </div>
+            {% endif %}
+
+            <div class="blog-content fs-5 text-dark" style="line-height: 1.8; text-align: justify;">
+                {{ post.content|linebreaks }}
+            </div>
+
+            <div class="mt-5 pt-4 border-top d-flex align-items-center justify-content-between">
+                <span class="fw-bold">Chia sẻ bài viết:</span>
+                <div>
+                    <button class="btn btn-outline-primary rounded-circle me-2"><i class="bi bi-facebook"></i></button>
+                    <button class="btn btn-outline-info rounded-circle me-2"><i class="bi bi-twitter"></i></button>
+                    <button class="btn btn-outline-danger rounded-circle"><i class="bi bi-envelope"></i></button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .blog-content p {
+        margin-bottom: 1.5rem;
+    }
+    .blog-content strong {
+        color: #2c3e50;
+    }
+</style>
+{% endblock %}

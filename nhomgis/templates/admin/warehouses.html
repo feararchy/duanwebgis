@@ -1,0 +1,67 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-uppercase"><i class="bi bi-building"></i> Quản lý kho hàng</h3>
+        <div>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary shadow-sm me-2">Quay lại</a>
+            <a href="{% url 'warehouse_form' %}" class="btn btn-warning fw-bold shadow-sm">
+                <i class="bi bi-plus-circle"></i> Thêm kho mới
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Tên Kho</th>
+                            <th>Địa chỉ</th>
+                            <th>Tọa độ (Lat / Lon)</th>
+                            <th>Phí cơ bản</th>
+                            <th>Phí/Km</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for w in warehouses %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ w.name }}</td>
+                            <td>{{ w.address }}</td>
+                            <td><small class="text-muted">{{ w.latitude }} / {{ w.longitude }}</small></td>
+                            <td>{{ w.base_fee }} đ</td>
+                            <td>{{ w.fee_per_km }} đ</td>
+                            <td class="text-center">
+                                <a href="{% url 'warehouse_form' w.id %}" class="btn btn-sm btn-outline-info me-1" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'warehouse_delete' w.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa kho này?')" title="Xóa"><i class="bi bi-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <h5>Chưa có kho hàng nào được thiết lập.</h5>
+                                <p>Hệ thống tính phí vận chuyển tự động đang bị vô hiệu hóa.</p>
+                                <a href="{% url 'warehouse_form' %}" class="btn btn-warning mt-2">Thêm kho hàng ngay</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

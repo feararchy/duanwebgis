@@ -1,0 +1,65 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width: 800px;">
+    <div class="d-flex justify-content-between mb-3">
+        <h3 class="fw-bold">{% if product %}Chỉnh sửa Sản Phẩm{% else %}Thêm Sản Phẩm Mới{% endif %}</h3>
+        <a href="{% url 'products' %}" class="btn btn-secondary shadow-sm">Hủy / Quay lại</a>
+    </div>
+    
+    <form action="{% url 'product_save' %}" method="POST" enctype="multipart/form-data" class="bg-white p-4 shadow-sm rounded border">
+        {% csrf_token %}
+        <input type="hidden" name="id" value="{{ product.id|default:'' }}">
+        
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <label class="fw-bold">Tên sản phẩm:</label>
+                <input type="text" name="name" class="form-control" value="{{ product.name }}" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="fw-bold">Danh mục:</label>
+                <select name="category_id" class="form-select" required>
+                    <option value="">-- Chọn danh mục --</option>
+                    {% for c in categories %}
+                        <option value="{{ c.id }}" {% if product and product.category.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="fw-bold">Giá bán (đ):</label>
+                <input type="number" name="price" class="form-control" value="{{ product.price }}" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="fw-bold">Đơn vị tính:</label>
+                <input type="text" name="unit" class="form-control" value="{{ product.unit }}" placeholder="Bao, Khối, Kg..." required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="fw-bold">Số lượng tồn kho:</label>
+                <input type="number" name="stock_quantity" class="form-control" value="{{ product.stock_quantity }}" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="fw-bold">Ảnh chính (Đại diện):</label>
+            <input type="file" name="image" class="form-control" accept="image/*" {% if not product %}required{% endif %}>
+            {% if product and product.image %}
+                <small class="text-muted">Đã có ảnh: <img src="{{ product.image.url }}" width="40" class="ms-2 rounded"></small>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            <label class="fw-bold">Ảnh phụ (Gallery - Có thể chọn nhiều):</label>
+            <input type="file" name="gallery_images" class="form-control" accept="image/*" multiple>
+        </div>
+
+        <div class="mb-4">
+            <label class="fw-bold">Mô tả sản phẩm:</label>
+            <textarea name="description" class="form-control" rows="4">{{ product.description }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-warning w-100 fw-bold btn-lg shadow"><i class="bi bi-save"></i> LƯU SẢN PHẨM</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-5 mb-5 d-flex justify-content-center">
+    <div class="card shadow border-0" style="width: 450px; border-radius: 15px;">
+        <div class="card-header bg-warning text-dark text-center fw-bold fs-5 py-3" style="border-radius: 15px 15px 0 0;">
+            <i class="bi bi-envelope-check"></i> XÁC THỰC EMAIL
+        </div>
+        <div class="card-body p-4 text-center">
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} text-start small">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <p class="text-muted mb-4">Chúng tôi vừa gửi một mã gồm 6 chữ số đến email <b>{{ request.session.temp_user.email }}</b>. Vui lòng kiểm tra (cả hộp thư Spam) và nhập mã vào bên dưới.</p>
+
+            <form action="{% url 'verify_email' %}" method="POST">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <input type="text" name="otp" class="form-control form-control-lg text-center fw-bold border-primary" 
+                           placeholder="_ _ _ _ _ _" maxlength="6" style="letter-spacing: 15px; font-size: 24px;" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold btn-lg rounded-pill shadow-sm">
+                    <i class="bi bi-shield-check"></i> Xác Nhận Mã
+                </button>
+            </form>
+            
+            <div class="mt-3">
+                <a href="{% url 'register' %}" class="text-decoration-none small text-danger">Đăng ký lại tài khoản khác?</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

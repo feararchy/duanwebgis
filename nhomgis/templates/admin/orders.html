@@ -1,0 +1,54 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-uppercase"><i class="bi bi-cart-check text-danger"></i> Quản lý Đơn Hàng</h3>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary shadow-sm">Quay lại</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Tổng Tiền</th>
+                            <th>Địa Chỉ Giao</th>
+                            <th>Ngày Đặt</th>
+                            <th width="200px">Cập nhật Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in orders %}
+                        <tr>
+                            <td class="fw-bold text-primary">#{{ o.id }}</td>
+                            <td>{{ o.user.username }}</td>
+                            <td class="text-danger fw-bold">{{ o.total_amount }} đ</td>
+                            <td><small>{{ o.shipping_address }}</small></td>
+                            <td><small class="text-muted">{{ o.order_date|date:"d/m/Y H:i" }}</small></td>
+                            <td>
+                                <form action="{% url 'order_update_status' %}" method="POST" class="d-flex">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                    <select name="status" class="form-select form-select-sm me-1 border-primary" required>
+                                        <option value="CHỜ XÁC NHẬN" {% if o.status == 'CHỜ XÁC NHẬN' %}selected{% endif %}>Chờ xác nhận</option>
+                                        <option value="ĐANG GIAO" {% if o.status == 'ĐANG GIAO' %}selected{% endif %}>Đang giao</option>
+                                        <option value="ĐÃ GIAO" {% if o.status == 'ĐÃ GIAO' %}selected{% endif %}>Đã giao</option>
+                                        <option value="ĐÃ HỦY" {% if o.status == 'ĐÃ HỦY' %}selected{% endif %}>Đã hủy</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-check-lg"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-box fs-2 d-block"></i> Chưa có đơn hàng nào!</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
