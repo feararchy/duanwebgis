@@ -69,9 +69,9 @@ WSGI_APPLICATION = 'webgis.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'webgis_db1',      # Tên DB bạn tạo trong pgAdmin
+        'NAME': 'webgis_db',      # Tên DB bạn tạo trong pgAdmin
         'USER': 'postgres',       # User mặc định
-        'PASSWORD': '123',          # Mật khẩu của bạn
+        'PASSWORD': '123456',          # Mật khẩu của bạn
         'HOST': 'localhost',
         'PORT': '5432',
     }

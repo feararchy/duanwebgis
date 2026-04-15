@@ -1,46 +1,62 @@
 {% extends 'layout.html' %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between mb-3">
-        <h3>Danh sách Khách Hàng</h3>
-        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Quay lại Dashboard</a>
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold"><i class="bi bi-people-fill text-info"></i> Quản Lý Khách Hàng</h3>
     </div>
 
+    <form method="GET" class="mb-4">
+        <div class="input-group shadow-sm">
+            <input type="text" name="q" class="form-control" placeholder="Tìm theo Tên đăng nhập hoặc Email..." value="{{ search_query }}">
+            <button class="btn btn-info text-white fw-bold" type="submit"><i class="bi bi-search"></i> Tìm kiếm</button>
+            {% if search_query %}
+            <a href="{% url 'users' %}" class="btn btn-secondary fw-bold">Xóa lọc</a>
+            {% endif %}
+        </div>
+    </form>
+
     <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <table class="table table-striped mb-0 align-middle">
-                <thead class="table-primary">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
                     <tr>
-                        <th>ID</th>
-                        <th>Tên đăng nhập</th>
-                        <th>Email</th>
-                        <th>Ngày tham gia</th>
-                        <th>Hành động</th>
+                        <th>ID</th><th>Tên đăng nhập</th><th>Email</th><th>Trạng thái</th><th>Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for u in users %}
                     <tr>
-                        <td>{{ u.id }}</td>
-                        <td class="fw-bold">{{ u.username }}</td>
+                        <td class="fw-bold">#{{ u.id }}</td>
+                        <td>{{ u.username }}</td>
                         <td>{{ u.email }}</td>
-                        <td>{{ u.date_joined|date:"d/m/Y" }}</td>
                         <td>
-                            <a href="{% url 'user_delete' u.id %}" class="btn btn-sm btn-danger"
-                               onclick="return confirm('CẢNH BÁO: Xóa user sẽ xóa luôn đơn hàng của họ. Bạn có chắc không?')">
-                                <i class="bi bi-trash"></i> Xóa
-                            </a>
+                            {% if u.is_active %}<span class="badge bg-success">Đã kích hoạt</span>
+                            {% else %}<span class="badge bg-secondary">Chưa kích hoạt</span>{% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'user_delete' u.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa khách hàng này?')"><i class="bi bi-trash"></i> Xóa</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-4">Chưa có khách hàng nào đăng ký.</td>
-                    </tr>
+                    <tr><td colspan="5" class="text-center py-4">Không tìm thấy khách hàng nào.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    {% if users.has_other_pages %}
+    <div class="mt-4 d-flex justify-content-center">
+        <ul class="pagination shadow-sm">
+            {% if users.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ users.previous_page_number }}&q={{ search_query }}">Trang trước</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ users.number }} / {{ users.paginator.num_pages }}</span></li>
+            {% if users.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ users.next_page_number }}&q={{ search_query }}">Trang tiếp</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
