@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+
+{% block title %}403 - Không có quyền truy cập{% endblock %}
+
+{% block content %}
+<div class="container text-center" style="margin-top: 100px; margin-bottom: 150px;">
+    <h1 class="display-1 text-danger fw-bold">403</h1>
+    <h2 class="mb-4">Truy Cập Bị Từ Chối</h2>
+    <p class="lead text-muted">Xin lỗi, tài khoản của bạn không có quyền truy cập vào khu vực quản trị.</p>
+    <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+        Về trang chủ
+    </a>
+</div>
+{% endblock %}

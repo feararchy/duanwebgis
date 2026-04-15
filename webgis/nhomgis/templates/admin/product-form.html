@@ -15,7 +15,7 @@
 
         <div class="mb-3">
             <label class="fw-bold">Mô tả sản phẩm:</label>
-            <textarea name="description" class="form-control" rows="3">{{ product.description }}</textarea>
+            <textarea id="editor" name="description" class="form-control" rows="3">{{ product.description }}</textarea>
         </div>
         
         <div class="row">
@@ -86,6 +86,13 @@
     document.addEventListener("DOMContentLoaded", () => {
         const inp = document.getElementById("price_input");
         if(inp.value) formatPrice(inp);
+    });
+</script>
+<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+<script>
+    // Kích hoạt CKEditor cho thẻ có id là 'editor'
+    document.addEventListener("DOMContentLoaded", function() {
+        CKEDITOR.replace('editor');
     });
 </script>
 {% endblock %}

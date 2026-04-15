@@ -1,5 +1,6 @@
-from django.urls import path
+from django.urls import path,re_path
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     # --- 1. KHÁCH HÀNG (PUBLIC) ---
@@ -17,6 +18,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register, name='register'),
+    path('profile/', views.profile_view, name='profile'), # <-- Dòng MỚI THÊM
+    path('profile/edit/', views.profile_edit_view, name='profile_edit'),
 
     # Giỏ hàng & Thanh toán
     path('cart/', views.cart_view, name='cart'),
@@ -41,7 +44,10 @@ urlpatterns = [
     path('category/save/', views.category_save, name='category_save'),
     path('category/delete/<int:id>/', views.category_delete, name='category_delete'),
     
+    # ... (các url admin khác) ...
     path('warehouses/', views.warehouse_list, name='warehouses'),
+    path('warehouse/edit/<int:id>/', views.warehouse_form, name='warehouse_edit'), # Dòng thêm mới
+    path('warehouse/save/', views.warehouse_save, name='warehouse_save'),          # Dòng thêm mới
     path('orders/', views.orders_list, name='orders'),
     path('orders/status/', views.order_update_status, name='order_status'),
     path('users/', views.users_list, name='users'),
@@ -50,4 +56,36 @@ urlpatterns = [
     # Bản đồ Admin
     path('dashboard/map/', views.admin_map_view, name='admin_map'),
     path('api/orders-locations/', views.api_orders_locations, name='api_orders_locations'),
+
+
+    
+    # MỚI: Quản lý Xuất/Nhập hàng
+    path('inventory/', views.inventory_manage, name='inventory_manage'),
+    
+    path('orders/', views.orders_list, name='orders'),
+    # ...
+
+    path('inventory/', views.inventory_manage, name='inventory_manage'),
+    # MỚI: Đường dẫn in phiếu xuất/nhập
+    path('inventory/print/<int:transaction_id>/', views.print_inventory_receipt, name='print_inventory_receipt'),
+      # Dòng thêm mới
+
+    path('gioi-thieu/', views.about, name='about'),
+
+    path('verify-email/', views.verify_email, name='verify_email'),
+
+    # Quên mật khẩu (Dùng hệ thống sẵn có của Django gửi link vào Mailtrap)
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='password_reset.html'), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), name='password_reset_done'),
+    path('password-reset-confirm/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='password_reset_confirm.html'), name='password_reset_confirm'),
+    path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
+
+    # Thêm vào urlpatterns trong urls.py
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('verify-reset-otp/', views.verify_reset_otp, name='verify_reset_otp'),
+    path('reset-password-new/', views.reset_password_new, name='reset_password_new'),
+
+
+
+    re_path(r'^.*$', views.custom_catch_all_404),
 ]

@@ -3,6 +3,9 @@
 {% load humanize %} 
 
 {% block content %}
+{{ product.description }}
+
+{{ product.description|safe }}
 <div class="container mt-5 mb-5">
     {% if messages %}
         {% for message in messages %}

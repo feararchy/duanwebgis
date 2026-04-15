@@ -5,6 +5,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 
@@ -28,32 +31,40 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 
 <script>
-    // --- BƯỚC 1: KHỞI TẠO BẢN ĐỒ ---
-    // Tọa độ trung tâm TP.HCM: [10.8231, 106.6297]
-    var map = L.map('map').setView([10.8231, 106.6297], 12);
+// --- BƯỚC 1 & 2: KHỞI TẠO BẢN ĐỒ VÀ HIỂN THỊ 1 KHO HÀNG DUY NHẤT TỪ DATABASE ---
+    
+    {% if warehouse %}
+        // Lấy tọa độ từ Database
+        var khoLat = parseFloat("{{ warehouse.latitude }}".replace(',', '.'));
+        var khoLng = parseFloat("{{ warehouse.longitude }}".replace(',', '.'));
 
-    // Thêm lớp nền bản đồ (OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+        // Khởi tạo bản đồ lấy kho hàng làm trung tâm
+        var map = L.map('map').setView([khoLat, khoLng], 13);
 
-    // --- BƯỚC 2: HIỂN THỊ KHO HÀNG (Màu Xanh) ---
-    // (Optional: Nếu bạn muốn hiện kho lên bản đồ luôn)
-    // Tạm thời mình fix cứng tọa độ kho bạn vừa gửi để test bản đồ chạy chưa
-    // Sau này có thể lấy từ Database
-    var warehouseIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
-    L.marker([10.807833, 106.665750], {icon: warehouseIcon})
-     .bindPopup("<b>KHO GÒ VẤP</b><br>Trung tâm phân phối")
-     .addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
+        var warehouseIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Chỉ tạo 1 Marker duy nhất dựa trên tọa độ thực tế
+        L.marker([khoLat, khoLng], {icon: warehouseIcon})
+         .bindPopup("<b>{{ warehouse.name }}</b><br>{{ warehouse.address }}")
+         .addTo(map);
+         
+    {% else %}
+        // Phòng hờ trường hợp Database chưa có kho hàng nào
+        var map = L.map('map').setView([10.8231, 106.6297], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    {% endif %}
 
     // --- BƯỚC 3: HIỂN THỊ ĐƠN HÀNG (Màu Đỏ - Có gom nhóm) ---
     var markers = L.markerClusterGroup();
@@ -97,6 +108,19 @@
                             </div>
                         </div>
                     `;
+                    var popupContent = `
+                        <div style="font-family: Arial, sans-serif;">
+                            <h6 class="text-danger fw-bold m-0">Đơn #${order.id}</h6>
+                            <hr class="my-1">
+                            <div><b>Khách:</b> ${order.customer}</div>
+                            <div><b>Tiền:</b> ${parseInt(order.total).toLocaleString()} đ</div>
+                            <div class="small text-muted mt-1"><i>${order.address}</i></div>
+                            
+                            <button onclick="drawRoute(${order.lat}, ${order.lon})" class="btn btn-sm btn-primary w-100 mt-2">
+                                <i class="bi bi-geo-alt"></i> Chỉ đường từ kho
+                            </button>
+                        </div>
+                    `;
 
                     marker.bindPopup(popupContent);
                     markers.addLayer(marker);
@@ -113,5 +137,40 @@
         .catch(error => {
             console.error('Lỗi tải dữ liệu:', error);
         });
+        // Biến toàn cục để quản lý lớp đường đi
+        var routingControl = null; 
+
+        function drawRoute(destLat, destLon) {
+            // 1. Chuẩn hóa tọa độ kho từ Django (đảm bảo là số thực)
+            var startLat = parseFloat("{{ warehouse.latitude }}".replace(',', '.'));
+            var startLng = parseFloat("{{ warehouse.longitude }}".replace(',', '.'));
+
+            // 2. Xóa lộ trình cũ nếu đang hiển thị
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+
+            // 3. Khởi tạo và vẽ đường đi mới
+            routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(startLat, startLng), // Điểm đi: Kho hàng
+                    L.latLng(destLat, destLon)     // Điểm đến: Khách hàng
+                ],
+                lineOptions: {
+                    styles: [{ color: '#0d6efd', weight: 6, opacity: 0.8 }] // Màu xanh đặc trưng
+                },
+                createMarker: function() { return null; }, // Không tạo marker phụ trùng lặp
+                addWaypoints: false,
+                routeWhileDragging: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true, // Tự động zoom vừa vặn đường đi
+                show: false, // Ẩn bảng hướng dẫn chi tiết (itinerary)
+            }).addTo(map);
+
+            // 4. Đóng popup sau khi bấm để nhìn rõ đường đi hơn
+            map.closePopup();
+        }
+        
 </script>
 {% endblock %}

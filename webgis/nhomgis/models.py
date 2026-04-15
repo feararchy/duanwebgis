@@ -1,5 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from ckeditor.fields import RichTextField  # 1. Import thư viện ở đầu file
+import random
+from django.utils import timezone
+from datetime import timedelta
 
 # 1. Danh Mục
 class Category(models.Model):
@@ -14,10 +18,11 @@ class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="Tên sản phẩm")
     price = models.IntegerField(verbose_name="Giá bán")
     unit = models.CharField(max_length=50, verbose_name="Đơn vị tính")
-    description = models.TextField(blank=True, verbose_name="Mô tả")
-    stock_quantity = models.IntegerField(default=0, verbose_name="Tồn kho")
     
-    # Sử dụng ImageField để up ảnh từ máy tính
+    # 2. Thay đổi TextField thành RichTextField
+    description = RichTextField(blank=True, null=True, verbose_name="Mô tả") 
+    
+    stock_quantity = models.IntegerField(default=0, verbose_name="Tồn kho")
     image = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Ảnh chính")
     
     def __str__(self): 
@@ -119,4 +124,59 @@ class OrderItem(models.Model):
     price_at_purchase = models.IntegerField(verbose_name="Giá lúc mua")
 
     def total_price(self):
-        return self.quantity * self.price_at_purchase
+        return self.quantity * self.price_at_purchase 
+# Thêm vào cuối file models.py
+
+# --- 6. QUẢN LÝ TỒN KHO & LỊCH SỬ XUẤT NHẬP ---
+class Stock(models.Model):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stocks', verbose_name="Kho hàng")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks', verbose_name="Sản phẩm")
+    quantity = models.IntegerField(default=0, verbose_name="Số lượng tồn tại kho")
+
+    class Meta:
+        unique_together = ('warehouse', 'product') # Ràng buộc 1 kho chỉ có 1 dòng tồn kho cho 1 sản phẩm
+
+    def __str__(self):
+        return f"{self.warehouse.name} - {self.product.name}: {self.quantity}"
+
+class InventoryTransaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('IMPORT', 'Nhập hàng'),
+        ('EXPORT', 'Xuất hàng'),
+    )
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Kho hàng")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Sản phẩm")
+    transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES, verbose_name="Loại giao dịch")
+    quantity = models.PositiveIntegerField(verbose_name="Số lượng")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Ngày thực hiện")
+    note = models.TextField(blank=True, null=True, verbose_name="Ghi chú")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Người thực hiện")
+
+    def __str__(self):
+        return f"{self.get_transaction_type_display()} - {self.product.name} ({self.quantity})"
+    
+# thongtin
+class CustomerProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    phone = models.CharField(max_length=15, blank=True, null=True, verbose_name="Số điện thoại")
+    address = models.TextField(blank=True, null=True, verbose_name="Địa chỉ cụ thể")
+    
+    # THÊM 2 TRƯỜNG NÀY
+    latitude = models.FloatField(null=True, blank=True, verbose_name="Vĩ độ")
+    longitude = models.FloatField(null=True, blank=True, verbose_name="Kinh độ")
+
+    def __str__(self):
+        return f"Hồ sơ của {self.user.username}"
+
+
+class EmailVerification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        # Mã hết hạn sau 5 phút
+        return timezone.now() > self.created_at + timedelta(minutes=5)
+
+    def __str__(self):
+        return f"OTP của {self.user.username}: {self.code}"

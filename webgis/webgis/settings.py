@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     
     # --- THƯ VIỆN BỔ SUNG ---
     'django.contrib.humanize', # Định dạng tiền tệ
-    
+    'ckeditor',
     # --- APP CỦA BẠN ---
     'nhomgis',
 ]
@@ -54,6 +54,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -68,9 +69,9 @@ WSGI_APPLICATION = 'webgis.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'webgis_db',      # Tên DB bạn tạo trong pgAdmin
+        'NAME': 'webgis_db1',      # Tên DB bạn tạo trong pgAdmin
         'USER': 'postgres',       # User mặc định
-        'PASSWORD': '123456',          # Mật khẩu của bạn
+        'PASSWORD': '123',          # Mật khẩu của bạn
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -111,3 +112,13 @@ MEDIA_URL = '/media/'
 
 # Thư mục vật lý trên máy tính để lưu ảnh upload
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cấu hình gửi Mail qua Mailtrap
+# settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
+EMAIL_HOST_USER = '9469cd5ada9a6b'
+EMAIL_HOST_PASSWORD = '7dc45daca8a701'
+EMAIL_PORT = '2525'   # Nhấn vào icon 'mắt' ở dòng Password trên web để hiện pass rồi copy vào đây
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

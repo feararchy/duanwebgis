@@ -1,0 +1,98 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h5 class="mb-0 text-center fw-bold"><i class="bi bi-geo-alt-fill"></i> ĐỊA CHỈ GIAO HÀNG & HỒ SƠ</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="row mb-3">
+                                    <div class="col-6"><label class="fw-bold">Họ đệm</label>{{ u_form.last_name }}</div>
+                                    <div class="col-6"><label class="fw-bold">Tên</label>{{ u_form.first_name }}</div>
+                                </div>
+                                <div class="mb-3"><label class="fw-bold">Email</label>{{ u_form.email }}</div>
+                                <div class="mb-3"><label class="fw-bold">Số điện thoại</label>{{ p_form.phone }}</div>
+                                <div class="mb-3"><label class="fw-bold text-danger">Địa chỉ (Chọn từ bản đồ)</label>{{ p_form.address }}</div>
+                                {{ p_form.latitude }}{{ p_form.longitude }}
+                            </div>
+                            
+                            <div class="col-md-7">
+                                <div id="map" style="height: 450px; border-radius: 8px; border: 2px solid #dee2e6;"></div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-dark flex-grow-1 fw-bold py-2">LƯU THÔNG TIN</button>
+                            <a href="{% url 'profile' %}" class="btn btn-outline-secondary px-4 py-2">HỦY</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Khởi tạo vị trí (Ưu tiên tọa độ cũ của user, nếu không thì lấy HCMUNRE)
+    let lat = document.getElementById('lat-input').value || 10.8166;
+    let lon = document.getElementById('lon-input').value || 106.6333;
+
+    var map = L.map('map').setView([lat, lon], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    var marker = L.marker([lat, lon], {draggable: true}).addTo(map);
+
+    // 2. Tích hợp thanh tìm kiếm địa chỉ
+    var geocoder = L.Control.geocoder({ defaultMarkGeocode: false, placeholder: "Tìm kiếm địa chỉ..." })
+        .on('markgeocode', function(e) {
+            var center = e.geocode.center;
+            map.setView(center, 17);
+            updatePos(center.lat, center.lng, e.geocode.name);
+        }).addTo(map);
+
+    // 3. Click bản đồ để ghim
+    map.on('click', function(e) {
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+
+    // 4. Kéo marker để ghim
+    marker.on('dragend', function() {
+        let p = marker.getLatLng();
+        reverseGeocode(p.lat, p.lng);
+    });
+
+    function reverseGeocode(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
+            .then(res => res.json())
+            .then(data => updatePos(lat, lng, data.display_name));
+    }
+
+// Hàm này sẽ được gọi khi Click bản đồ hoặc Kéo Marker
+    function updatePos(lat, lng, addr) {
+        // 1. Cập nhật vị trí Marker
+        marker.setLatLng([lat, lng]);
+        marker.setOpacity(1);
+
+        // 2. Cập nhật 2 trường tọa độ ẩn (Dùng để tính phí ship sau này)
+        document.getElementById('lat-input').value = lat;
+        document.getElementById('lon-input').value = lng;
+
+        // 3. Cập nhật tên địa chỉ vào ô nhập (Người dùng vẫn có thể sửa lại sau đó)
+        // Nếu bạn muốn người dùng tự sửa, hãy để họ ghi đè lên giá trị này
+        document.getElementById('address-input').value = addr;
+    }
+    });
+</script>
+{% endblock %}

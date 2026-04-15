@@ -7,10 +7,14 @@
         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Quay lại</a>
     </div>
 
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i> Để thêm hoặc sửa tọa độ Kho hàng, bạn vui lòng truy cập trang quản trị hệ thống: 
-        <a href="/admin/nhomgis/warehouse/" target="_blank" class="fw-bold">Tại đây</a>
-    </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -22,6 +26,7 @@
                         <th>Tọa độ (Lat / Lon)</th>
                         <th>Phí cơ bản</th>
                         <th>Phí/Km</th>
+                        <th class="text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -29,16 +34,19 @@
                     <tr>
                         <td class="fw-bold">{{ w.name }}</td>
                         <td>{{ w.address }}</td>
-                        <td>{{ w.latitude }} / {{ w.longitude }}</td>
+                        <td>{{ w.latitude|floatformat:6 }} / {{ w.longitude|floatformat:6 }}</td>
                         <td>{{ w.base_fee }} đ</td>
                         <td>{{ w.fee_per_km }} đ</td>
+                        <td class="text-center">
+                            <a href="{% url 'warehouse_edit' w.id %}" class="btn btn-sm btn-warning fw-bold">
+                                Sửa cấu hình
+                            </a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-danger">
+                        <td colspan="6" class="text-center py-4 text-danger">
                             Chưa có kho hàng nào! Hệ thống tính phí sẽ không hoạt động.
-                            <br>
-                            Hãy vào <a href="/admin/">/admin</a> để thêm kho.
                         </td>
                     </tr>
                     {% endfor %}

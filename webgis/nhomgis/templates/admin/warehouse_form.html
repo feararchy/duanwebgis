@@ -1,0 +1,170 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-geo-alt-fill"></i> Cấu hình Kho: {{ warehouse.name }}</h3>
+        <a href="{% url 'warehouses' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold">Thông tin chi tiết</div>
+                <div class="card-body">
+                    <form action="{% url 'warehouse_save' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ warehouse.id }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tên Kho</label>
+                            <input type="text" name="name" class="form-control" value="{{ warehouse.name }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Địa chỉ (Tự động cập nhật)</label>
+                            <textarea name="address" id="id_address" class="form-control" rows="2" required>{{ warehouse.address }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label fw-bold">Vĩ độ (Lat)</label>
+                                <input type="number" step="any" name="latitude" id="id_lat" class="form-control" value="{{ warehouse.latitude }}" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label fw-bold">Kinh độ (Lon)</label>
+                                <input type="number" step="any" name="longitude" id="id_lon" class="form-control" value="{{ warehouse.longitude }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label fw-bold">Phí cơ bản</label>
+                                <div class="input-group">
+                                    <input type="number" name="base_fee" class="form-control" value="{{ warehouse.base_fee }}" required>
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label fw-bold">Phí/Km</label>
+                                <div class="input-group">
+                                    <input type="number" name="fee_per_km" class="form-control" value="{{ warehouse.fee_per_km }}" required>
+                                    <span class="input-group-text">đ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-warning fw-bold text-dark shadow-sm">
+                                <i class="bi bi-save"></i> LƯU CẤU HÌNH
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-0 text-white"><i class="bi bi-search"></i></span>
+                        <input type="text" id="search-input" class="form-control border-0" placeholder="Tìm kiếm địa điểm (ví dụ: Tân Bình, TP.HCM)...">
+                        <button class="btn btn-light fw-bold" type="button" id="btn-search">Tìm kiếm</button>
+                    </div>
+                </div>
+                <div class="card-body p-0 position-relative">
+                    <div id="map-picker" style="height: 480px; width: 100%;"></div>
+                    <div id="loading-spinner" class="position-absolute top-50 start-50 translate-middle d-none" style="z-index: 1000;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    // 1. Khởi tạo bản đồ
+    var latInit = parseFloat("{{ warehouse.latitude|default:10.79 }}");
+    var lonInit = parseFloat("{{ warehouse.longitude|default:106.66 }}");
+
+    var map = L.map('map-picker').setView([latInit, lonInit], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var marker = L.marker([latInit, lonInit], {draggable: true}).addTo(map);
+
+    // 2. Hàm lấy địa chỉ từ tọa độ (Reverse Geocoding)
+    async function updateAddressFromCoords(lat, lon) {
+        document.getElementById('loading-spinner').classList.remove('d-none');
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`);
+            const data = await response.json();
+            if (data.display_name) {
+                document.getElementById('id_address').value = data.display_name;
+            }
+        } catch (error) {
+            console.error("Lỗi lấy địa chỉ:", error);
+        }
+        document.getElementById('loading-spinner').classList.add('d-none');
+    }
+
+    // 3. Hàm cập nhật tọa độ vào Input
+    function updateInputs(lat, lon) {
+        marker.setLatLng([lat, lon]);
+        document.getElementById('id_lat').value = lat.toFixed(6);
+        document.getElementById('id_lon').value = lon.toFixed(6);
+    }
+
+    // 4. Sự kiện click bản đồ và kéo Marker
+    map.on('click', function(e) {
+        updateInputs(e.latlng.lat, e.latlng.lng);
+        updateAddressFromCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    marker.on('dragend', function(e) {
+        const pos = marker.getLatLng();
+        updateInputs(pos.lat, pos.lng);
+        updateAddressFromCoords(pos.lat, pos.lng);
+    });
+
+    // 5. Xử lý tìm kiếm vị trí
+    async function searchLocation() {
+        const query = document.getElementById('search-input').value;
+        if (!query) return;
+
+        document.getElementById('loading-spinner').classList.remove('d-none');
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            const results = await response.json();
+
+            if (results.length > 0) {
+                const res = results[0];
+                const lat = parseFloat(res.lat);
+                const lon = parseFloat(res.lon);
+
+                map.setView([lat, lon], 16);
+                updateInputs(lat, lon);
+                document.getElementById('id_address').value = res.display_name;
+            } else {
+                alert("Không tìm thấy địa điểm này!");
+            }
+        } catch (error) {
+            alert("Đã xảy ra lỗi khi tìm kiếm.");
+        }
+        document.getElementById('loading-spinner').classList.add('d-none');
+    }
+
+    document.getElementById('btn-search').addEventListener('click', searchLocation);
+    document.getElementById('search-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') searchLocation();
+    });
+</script>
+{% endblock %}

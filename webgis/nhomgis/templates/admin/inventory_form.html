@@ -1,0 +1,174 @@
+{% extends 'layout.html' %} 
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Thao Tác Xuất / Nhập Hàng</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" action="{% url 'inventory_manage' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Chọn Kho Hàng</label>
+                                <select name="warehouse" class="form-select" required>
+                                    <option value="" disabled selected>-- Chọn kho --</option>
+                                    {% for w in warehouses %}
+                                        <option value="{{ w.id }}">{{ w.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold">Loại Giao Dịch</label>
+                                <select name="transaction_type" class="form-select" required>
+                                    <option value="IMPORT">Nhập Hàng</option>
+                                    <option value="EXPORT">Xuất Hàng</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-2 d-flex justify-content-between align-items-center">
+                            <label class="form-label fw-bold mb-0">Danh sách Vật Liệu</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="addProductRow()">
+                                + Thêm sản phẩm
+                            </button>
+                        </div>
+
+                        <div id="product-list-container" class="border p-2 mb-3 bg-light rounded">
+                            <div class="row mb-2 product-row">
+                                <div class="col-7 pe-1">
+                                    <select name="product" class="form-select" required>
+                                        <option value="" disabled selected>-- Chọn vật liệu --</option>
+                                        {% for p in products %}
+                                            <option value="{{ p.id }}">{{ p.name }} (Tồn: {{ p.stock_quantity }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-4 px-1">
+                                    <input type="number" name="quantity" class="form-control" placeholder="Số lượng" min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57" required>
+                                </div>
+                                <div class="col-1 ps-1 text-end">
+                                    <button type="button" class="btn btn-danger remove-btn" onclick="removeProductRow(this)">X</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ghi chú (Tùy chọn)</label>
+                            <textarea name="note" class="form-control" rows="2" placeholder="Ví dụ: Lô hàng xây công trình A..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2">XÁC NHẬN GIAO DỊCH</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Lịch Sử Giao Dịch Gần Đây</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Kho</th>
+                                    <th>Vật liệu</th>
+                                    <th>Loại</th>
+                                    <th>SL</th>
+                                    <th>Người thực hiện</th>
+                                    <th>In</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in transactions %}
+                                <tr>
+                                    <td>{{ t.date|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ t.warehouse.name }}</td>
+                                    <td>{{ t.product.name }}</td>
+                                    <td>
+                                        {% if t.transaction_type == 'IMPORT' %}
+                                            <span class="badge bg-success">Nhập</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Xuất</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-bold text-center">{{ t.quantity }}</td>
+                                    <td>{{ t.user.username|default:"Hệ thống" }}</td>
+                                    <td>
+                                        <a href="{% url 'print_inventory_receipt' t.id %}" target="_blank" class="btn btn-sm btn-outline-dark" title="In phiếu">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer" viewBox="0 0 16 16">
+                                                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                                                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                                            </svg>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">Chưa có giao dịch nào.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addProductRow() {
+        const container = document.getElementById('product-list-container');
+        const firstRow = container.querySelector('.product-row');
+        const newRow = firstRow.cloneNode(true);
+        
+        newRow.querySelector('input[type="number"]').value = '';
+        newRow.querySelector('select').selectedIndex = 0;
+        
+        container.appendChild(newRow);
+        updateRemoveButtons();
+    }
+
+    function removeProductRow(button) {
+        const container = document.getElementById('product-list-container');
+        const rows = container.querySelectorAll('.product-row');
+        if (rows.length > 1) {
+            button.closest('.product-row').remove();
+        } else {
+            alert('Cần ít nhất 1 sản phẩm để thực hiện giao dịch!');
+        }
+        updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+        const rows = document.querySelectorAll('.product-row');
+        rows.forEach(row => {
+            const btn = row.querySelector('.remove-btn');
+            if (rows.length === 1) {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = 'inline-block';
+            }
+        });
+    }
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        updateRemoveButtons();
+    });
+</script>
+{% endblock %}

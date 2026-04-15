@@ -38,9 +38,10 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="id" value="{{ order.id }}">
                                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                    <option value="{{ order.status }}">{{ order.status }}</option>
-                                    <option value="ĐANG GIAO">ĐANG GIAO</option>
-                                    <option value="ĐÃ GIAO">ĐÃ GIAO</option>
+                                    <option value="CHỜ XỬ LÝ" {% if order.status == 'CHỜ XỬ LÝ' %}selected{% endif %}>CHỜ XỬ LÝ</option>
+                                    <option value="ĐANG GIAO" {% if order.status == 'ĐANG GIAO' %}selected{% endif %}>ĐANG GIAO</option>
+                                    <option value="ĐÃ GIAO" {% if order.status == 'ĐÃ GIAO' %}selected{% endif %}>ĐÃ GIAO</option>
+                                    <option value="ĐÃ HỦY" {% if order.status == 'ĐÃ HỦY' %}selected{% endif %}>ĐÃ HỦY</option>
                                 </select>
                             </form>
                         </td>

@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0"><i class="bi bi-person-badge"></i> HỒ SƠ KHÁCH HÀNG</h5>
+                    <a href="{% url 'profile_edit' %}" class="btn btn-warning btn-sm fw-bold">
+                        <i class="bi bi-pencil-square"></i> Chỉnh sửa
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-3 border-bottom pb-2">
+                        <div class="col-sm-4 fw-bold text-muted">Họ và tên:</div>
+                        <div class="col-sm-8 fs-5">{{ user.get_full_name|default:user.username }}</div>
+                    </div>
+                    <div class="row mb-3 border-bottom pb-2">
+                        <div class="col-sm-4 fw-bold text-muted">Email:</div>
+                        <div class="col-sm-8">{{ user.email }}</div>
+                    </div>
+                    <div class="row mb-3 border-bottom pb-2">
+                        <div class="col-sm-4 fw-bold text-muted">Số điện thoại:</div>
+                        <div class="col-sm-8">{{ profile.phone|default:"Chưa cập nhật" }}</div>
+                    </div>
+                    <div class="row mb-0">
+                        <div class="col-sm-4 fw-bold text-muted">Địa chỉ nhận hàng:</div>
+                        <div class="col-sm-8">
+                            {{ profile.address|default:"Chưa cập nhật" }}
+                            {% if profile.latitude %}
+                            <div class="mt-1"><small class="badge bg-info text-dark">Vị trí đã ghim: {{ profile.latitude|floatformat:4 }}, {{ profile.longitude|floatformat:4 }}</small></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center">
+                    <a href="{% url 'home' %}" class="btn btn-link text-decoration-none text-secondary">Quay lại mua sắm</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -51,19 +51,15 @@
                         <input type="password" name="password" class="form-control py-2" placeholder="Nhập password..." required>
                     </div>
                 </div>
-                
+                <div class="mt-2 text-end">
+                    <a href="{% url 'forgot_password' %}" class="text-decoration-none small text-muted">Quên mật khẩu?</a>
+                </div>
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">ĐĂNG NHẬP</button>
             </form>
             
             <div class="mt-3 text-center">
                 <span class="text-muted">Chưa có tài khoản?</span> 
                 <a href="{% url 'register' %}" class="text-decoration-none fw-bold">Đăng ký ngay</a>
-            </div>
-
-            <div class="mt-4 p-3 bg-white rounded border text-center small text-muted">
-                <p class="mb-1 fw-bold">Tài khoản dùng thử:</p>
-                <div>Khách: <b>user / 123456</b></div>
-                <div>Admin: <b>admin / 123456</b></div>
             </div>
         </div>
     </div>
