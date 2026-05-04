@@ -20,9 +20,9 @@
                                 <tr>
                                     <th>Sản phẩm</th>
                                     <th>Đơn giá</th>
-                                    <th>SL</th>
+                                    <th style="width: 130px;">SL</th>
                                     <th>Thành tiền</th>
-                                </tr>
+                                    <th class="text-center">Xóa</th> </tr>
                             </thead>
                             <tbody>
                                 {% for item in cart_items %}
@@ -34,8 +34,29 @@
                                         </div>
                                     </td>
                                     <td>{{ item.product.price|intcomma }}</td>
-                                    <td>{{ item.quantity }}</td>
+                                    
+                                    <td>
+                                        <form action="{% url 'cart_update' %}" method="POST" class="d-flex align-items-center mb-0">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control form-control-sm text-center me-1" style="width: 60px;">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Cập nhật">
+                                                <i class="bi bi-check2"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                    
                                     <td class="fw-bold">{{ item.total|intcomma }}</td>
+                                    
+                                    <td class="text-center">
+                                        <form action="{% url 'cart_remove' %}" method="POST" class="mb-0">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa khỏi giỏ">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -61,6 +82,14 @@
                                 <label class="fw-bold small">Người nhận:</label> {{ request.user.username }}
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-primary">Kho xuất hàng (Chọn kho để đổi phí ship)</label>
+                                <select name="warehouse_id" id="warehouse-select" class="form-select border-primary">
+                                    {% for w in warehouses %}
+                                        <option value="{{ w.id }}">{{ w.name }} ({{ w.address }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div class="mb-2">
                                 <label class="form-label fw-bold small">Địa chỉ giao hàng</label>
                                 <textarea name="address" id="address" class="form-control" rows="2" required placeholder="Chọn trên bản đồ..."></textarea>
@@ -109,7 +138,11 @@
     var productTotal = {{ total_price|stringformat:"d" }};
 
     var map = L.map('map').setView([10.8231, 106.6297], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
 
     var marker = L.marker(map.getCenter(), {draggable: true, autoPan: true}).addTo(map);
 
@@ -123,6 +156,11 @@
         const formData = new FormData();
         formData.append('lat', lat);
         formData.append('lng', lng);
+        
+        // --- THÊM 1 DÒNG NÀY ĐỂ GỬI KHO ĐƯỢC CHỌN VÀO API CỦA BẠN ---
+        formData.append('warehouse_id', document.getElementById('warehouse-select').value);
+        // ----------------------------------------------------------
+        
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}'); // Quan trọng!
 
         fetch('/api/calculate-shipping/', {
@@ -176,6 +214,13 @@
         calculateShipping(center.lat, center.lng);
     })
     .addTo(map);
+
+    // --- THÊM SỰ KIỆN NÀY ĐỂ TÍNH LẠI SHIP KHI KHÁCH ĐỔI KHO ---
+    document.getElementById('warehouse-select').addEventListener('change', function() {
+        var currentCoord = marker.getLatLng();
+        calculateShipping(currentCoord.lat, currentCoord.lng);
+    });
+    // ---------------------------------------------------------
 
     // Khởi chạy lần đầu
     var init = map.getCenter();

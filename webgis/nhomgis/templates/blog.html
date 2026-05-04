@@ -5,16 +5,34 @@
     <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
         <h2 class="fw-bold text-primary mb-0">Sổ tay Xây dựng</h2>
         {% if user.is_staff %}
-            <a href="{% url 'blog_create' %}" class="btn btn-danger fw-bold">
+            <a href="{% url 'admin_blog_add' %}" class="btn btn-danger fw-bold">
                 <i class="bi bi-plus-circle"></i> Viết Bài Mới
             </a>
+        {% endif %}
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-5">
+            <form method="GET" action="{% url 'blog_list' %}" class="d-flex shadow-sm rounded-pill">
+                <input type="text" name="q" class="form-control border-0 rounded-start-pill ps-4 py-2 bg-light" placeholder="Tìm kiếm bài viết..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary rounded-end-pill px-4 fw-bold">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+        
+        {% if search_query %}
+        <div class="col-12 mt-3">
+            <span class="text-muted">Kết quả tìm kiếm cho: <strong>"{{ search_query }}"</strong></span>
+            <a href="{% url 'blog_list' %}" class="text-danger text-decoration-none ms-3"><i class="bi bi-x-circle"></i> Xóa tìm kiếm</a>
+        </div>
         {% endif %}
     </div>
 
     <div class="row g-4">
         {% for post in page_obj %}
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0">
+            <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
                 <a href="{% url 'blog_detail' post.id %}">
                     {% if post.thumbnail %}
                         <img src="{{ post.thumbnail.url }}" class="card-img-top" alt="{{ post.title }}" style="height: 220px; object-fit: cover;">
@@ -22,19 +40,34 @@
                         <img src="https://via.placeholder.com/600x400" class="card-img-top" alt="Thumb" style="height: 220px; object-fit: cover;">
                     {% endif %}
                 </a>
-                <div class="card-body d-flex flex-column">
-                    <small class="text-muted mb-2"><i class="bi bi-calendar3"></i> {{ post.created_at|date:"d/m/Y" }}</small>
-                    <h5 class="card-title fw-bold"><a href="{% url 'blog_detail' post.id %}" class="text-dark text-decoration-none">{{ post.title }}</a></h5>
-                    <p class="card-text text-secondary mt-2 flex-grow-1">{{ post.content|truncatewords:20 }}</p>
-                    <a href="{% url 'blog_detail' post.id %}" class="btn btn-outline-primary mt-3 mt-auto align-self-start">Đọc tiếp</a>
+                <div class="card-body d-flex flex-column p-4">
+                    <small class="text-muted mb-2"><i class="bi bi-calendar3 text-primary me-1"></i> {{ post.created_at|date:"d/m/Y" }}</small>
+                    <h5 class="card-title fw-bold mb-3"><a href="{% url 'blog_detail' post.id %}" class="text-dark text-decoration-none">{{ post.title }}</a></h5>
+                    
+                    <p class="card-text text-secondary mb-4 flex-grow-1" style="font-size: 0.95rem;">
+                        {{ post.content|striptags|truncatewords:20 }}
+                    </p>
+                    
+                    <a href="{% url 'blog_detail' post.id %}" class="btn btn-outline-primary mt-auto align-self-start rounded-pill px-4 fw-semibold">Đọc tiếp <i class="bi bi-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
         {% empty %}
             <div class="col-12 text-center py-5">
-                <h4 class="text-muted">Chưa có bài viết nào.</h4>
+                <i class="bi bi-journal-x fs-1 text-muted mb-3 d-block"></i>
+                <h4 class="text-muted">
+                    {% if search_query %}
+                        Không tìm thấy bài viết nào chứa từ khóa <strong>"{{ search_query }}"</strong>.
+                    {% else %}
+                        Chưa có bài viết nào được đăng.
+                    {% endif %}
+                </h4>
+                {% if search_query %}
+                    <a href="{% url 'blog_list' %}" class="btn btn-primary mt-3 rounded-pill px-4"><i class="bi bi-arrow-clockwise"></i> Xem tất cả bài viết</a>
+                {% endif %}
             </div>
         {% endfor %}
     </div>
-</div>
+    
+    </div>
 {% endblock %}

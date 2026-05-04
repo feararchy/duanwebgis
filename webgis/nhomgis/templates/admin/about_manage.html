@@ -1,0 +1,123 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <h2 class="fw-bold"><i class="bi bi-info-square me-2"></i>Quản lý Trang Giới Thiệu</h2>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white fw-bold">Tiêu đề chính</div>
+            <div class="card-body">
+                <input type="text" class="form-control form-control-lg" name="title" value="{{ about_page.title }}" placeholder="Nhập tiêu đề chính của trang..." required>
+            </div>
+        </div>
+
+        <h4 class="mb-3">Các nội dung chi tiết (Block/Hộp)</h4>
+        <div id="sections-container">
+            {% for section in sections %}
+            <div class="card shadow-sm mb-3 section-item border-warning">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="fw-bold text-secondary">Loại khối</label>
+                            <select class="form-select" name="types[]">
+                                <option value="TEXT" {% if section.section_type == 'TEXT' %}selected{% endif %}>Văn bản</option>
+                                <option value="FEATURE" {% if section.section_type == 'FEATURE' %}selected{% endif %}>Tính năng (Icon)</option>
+                                <option value="CONTACT" {% if section.section_type == 'CONTACT' %}selected{% endif %}>Liên hệ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="fw-bold text-secondary">Mã Icon</label>
+                            <input type="text" class="form-control" name="icons[]" value="{{ section.icon_class|default:'' }}" placeholder="VD: bi-truck">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="fw-bold text-secondary">Căn dòng</label>
+                            <select class="form-select" name="aligns[]">
+                                <option value="text-start" {% if section.text_align == 'text-start' %}selected{% endif %}>Trái</option>
+                                <option value="text-center" {% if section.text_align == 'text-center' %}selected{% endif %}>Giữa</option>
+                                <option value="text-end" {% if section.text_align == 'text-end' %}selected{% endif %}>Phải</option>
+                                <option value="text-justify" {% if section.text_align == 'text-justify' %}selected{% endif %}>Đều</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="fw-bold text-secondary">Tiêu đề hộp con</label>
+                    <input type="text" class="form-control mb-3" name="headings[]" value="{{ section.heading }}" placeholder="VD: Tầm nhìn, Sứ mệnh, Liên hệ...">
+                    <label class="fw-bold text-secondary">Nội dung chi tiết</label>
+                    <textarea class="form-control mb-3" name="contents[]" rows="3" placeholder="Nhập nội dung chi tiết...">{{ section.content }}</textarea>
+                    
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove"><i class="bi bi-trash"></i> Xóa hộp này</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mb-5">
+            <button type="button" id="btn-add-section" class="btn btn-outline-primary btn-lg"><i class="bi bi-plus-circle"></i> Thêm hộp nội dung mới</button>
+        </div>
+        <div class="position-fixed bottom-0 end-0 p-3 bg-white w-100 shadow-lg border-top" style="z-index: 1000; margin-left: 250px;">
+            <div class="container d-flex justify-content-end">
+                <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-save me-2"></i> Lưu lại toàn bộ</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const container = document.getElementById('sections-container');
+    const btnAdd = document.getElementById('btn-add-section');
+
+    const sectionTemplate = `
+        <div class="card shadow-sm mb-3 section-item border-warning" style="animation: fadeIn 0.3s;">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="fw-bold text-secondary">Loại khối</label>
+                        <select class="form-select" name="types[]">
+                            <option value="TEXT">Văn bản</option>
+                            <option value="FEATURE">Tính năng (Icon)</option>
+                            <option value="CONTACT">Liên hệ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold text-secondary">Mã Icon</label>
+                        <input type="text" class="form-control" name="icons[]" placeholder="VD: bi-truck">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold text-secondary">Căn dòng</label>
+                        <select class="form-select" name="aligns[]">
+                            <option value="text-start">Trái</option>
+                            <option value="text-center">Giữa</option>
+                            <option value="text-end">Phải</option>
+                            <option value="text-justify">Đều</option>
+                        </select>
+                    </div>
+                </div>
+                <label class="fw-bold text-secondary">Tiêu đề hộp con</label>
+                <input type="text" class="form-control mb-3" name="headings[]" placeholder="Nhập tiêu đề...">
+                <label class="fw-bold text-secondary">Nội dung chi tiết</label>
+                <textarea class="form-control mb-3" name="contents[]" rows="3" placeholder="Nhập nội dung..."></textarea>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove"><i class="bi bi-trash"></i> Xóa hộp này</button>
+            </div>
+        </div>
+    `;
+
+    btnAdd.addEventListener('click', function() { container.insertAdjacentHTML('beforeend', sectionTemplate); });
+    container.addEventListener('click', function(e) {
+        if(e.target.classList.contains('btn-remove') || e.target.closest('.btn-remove')) {
+            e.target.closest('.section-item').remove();
+        }
+    });
+});
+</script>
+<style>@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }</style>
+{% endblock %}

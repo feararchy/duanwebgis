@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'admin/admin_base.html' %}
 {% block content %}
 <div class="container mt-4 mb-5">
     <h3 class="fw-bold">{% if product %}Chỉnh Sửa Sản Phẩm{% else %}Thêm Sản Phẩm Mới{% endif %}</h3>
@@ -42,8 +42,13 @@
                 </div>
             </div>
             <div class="col-md-6 mb-3">
-                <label class="fw-bold">Tồn kho:</label>
-                <input type="number" name="stock_quantity" class="form-control" value="{{ product.stock_quantity }}" required>
+                <label class="fw-bold">Tổng tồn kho toàn hệ thống:</label>
+                <input type="text" class="form-control bg-light text-primary fw-bold" 
+                    value="{% if product %}{{ product.stock_quantity }}{% else %}0{% endif %}" 
+                    readonly>
+                <small class="text-danger fst-italic">
+                    <i class="bi bi-info-circle"></i> Số lượng tự động tính từ các kho. Sang phần <b>Xuất/Nhập Kho</b> để bổ sung hàng.
+                </small>
             </div>
         </div>
         
@@ -66,7 +71,44 @@
                 </div>
             {% endif %}
         </div>
-
+        {% if product %}
+        <div class="mb-4 p-3 bg-light rounded border">
+            <h6 class="fw-bold text-primary"><i class="bi bi-houses"></i> Chi tiết tồn kho theo từng kho:</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm bg-white mb-0">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Tên Kho Hàng</th>
+                            <th class="text-center">Số lượng đang có</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in stock_details %}
+                        <tr>
+                            <td class="align-middle fw-bold">{{ s.warehouse.name }}</td>
+                            <td class="text-center align-middle">
+                                <span class="badge {% if s.quantity > 0 %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                                    {{ s.quantity }} {{ product.unit }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-3">
+                                <i>Sản phẩm này chưa được nhập vào bất kỳ kho nào.</i>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-2 text-end">
+                <a href="{% url 'inventory_manage' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus-circle"></i> Tới trang Nhập/Xuất kho để thay đổi SL
+                </a>
+            </div>
+        </div>
+        {% endif %}
         <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-save"></i> Lưu Sản Phẩm</button>
         <a href="{% url 'products' %}" class="btn btn-secondary">Quay lại</a>
     </form>

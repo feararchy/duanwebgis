@@ -50,7 +50,11 @@ document.addEventListener("DOMContentLoaded", function() {
     let lon = document.getElementById('lon-input').value || 106.6333;
 
     var map = L.map('map').setView([lat, lon], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
 
     var marker = L.marker([lat, lon], {draggable: true}).addTo(map);
 
@@ -72,6 +76,21 @@ document.addEventListener("DOMContentLoaded", function() {
         let p = marker.getLatLng();
         reverseGeocode(p.lat, p.lng);
     });
+
+    // 5. Xử lý ràng buộc Số điện thoại
+    let phoneInput = document.getElementById('id_phone');
+    if (phoneInput) {
+        // Thiết lập các thuộc tính HTML5 bắt buộc
+        phoneInput.setAttribute('maxlength', '10');
+        phoneInput.setAttribute('minlength', '10');
+        phoneInput.setAttribute('pattern', '\\d{10}');
+        phoneInput.setAttribute('title', 'Vui lòng nhập đúng 10 chữ số');
+        
+        // Sự kiện: Bất cứ khi nào gõ phím, tự động xóa hết chữ cái và ký tự đặc biệt
+        phoneInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, ''); // Chỉ giữ lại từ 0-9
+        });
+    }
 
     function reverseGeocode(lat, lng) {
         fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)

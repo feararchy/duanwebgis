@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load humanize %} <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -10,18 +10,16 @@
             color: #333;
         }
         .invoice-box {
-            max-width: 800px;
+            max-width: 900px;
             margin: 30px auto;
             padding: 30px;
             border: 1px solid #eee;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
             background-color: #fff;
         }
-        /* CSS dùng riêng cho lúc in */
         @media print {
             body { background-color: #fff; }
             .invoice-box { box-shadow: none; border: none; margin: 0; padding: 0; }
-            /* Ẩn nút "In" khi máy in đang chạy để không in nút này lên giấy */
             .no-print { display: none !important; } 
         }
     </style>
@@ -65,23 +63,38 @@
     <table class="table table-bordered mb-4">
         <thead class="table-light">
             <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 50px;" class="text-center">STT</th>
                 <th>Tên Vật Liệu</th>
-                <th>Đơn vị tính</th>
+                <th class="text-center">Đơn vị tính</th>
                 <th class="text-center">Số lượng</th>
+                <th class="text-end">Đơn giá</th>
+                <th class="text-end">Thành tiền</th>
             </tr>
         </thead>
         <tbody>
+            {% for item in all_items %}
             <tr>
-                <td>1</td>
-                <td>{{ transaction.product.name }}</td>
-                <td>{{ transaction.product.unit }}</td>
-                <td class="text-center fw-bold fs-5">{{ transaction.quantity }}</td>
+                <td class="text-center">{{ forloop.counter }}</td>
+                <td>{{ item.product.name }}</td>
+                <td class="text-center">{{ item.product.unit }}</td>
+                <td class="text-center fw-bold">{{ item.quantity }}</td>
+                
+                <td class="text-end">{{ item.product.price|intcomma }} đ</td>
+                <td class="text-end fw-bold">{{ item.total_price|intcomma }} đ</td>
             </tr>
+            {% endfor %}
         </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-end fw-bold">Tổng cộng:</td>
+                <td class="text-end fw-bold fs-5 text-danger">{{ total_amount|intcomma }} đ</td>
+            </tr>
+        </tfoot>
     </table>
 
-    <div class="mb-5">
+    <p class="mb-0">Mã Lô/Đợt: <strong>#{{ transaction.batch_id|default:transaction.id }}</strong></p>
+
+    <div class="mb-5 mt-3">
         <h6 class="text-muted">Ghi chú:</h6>
         <p class="fst-italic border p-2 bg-light">
             {{ transaction.note|default:"Không có ghi chú gì thêm." }}

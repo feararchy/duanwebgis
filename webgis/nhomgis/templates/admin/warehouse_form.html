@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'admin/admin_base.html' %}
 
 {% block content %}
 <div class="container mt-4 mb-5">
@@ -31,11 +31,15 @@
                         <div class="row">
                             <div class="col-6 mb-3">
                                 <label class="form-label fw-bold">Vĩ độ (Lat)</label>
-                                <input type="number" step="any" name="latitude" id="id_lat" class="form-control" value="{{ warehouse.latitude }}" required>
+                                <input type="number" step="any" name="latitude" id="id_lat" class="form-control bg-light" 
+                                    value="{{ warehouse.latitude|default_if_none:'' }}" 
+                                    readonly style="cursor: not-allowed;" required>
                             </div>
                             <div class="col-6 mb-3">
                                 <label class="form-label fw-bold">Kinh độ (Lon)</label>
-                                <input type="number" step="any" name="longitude" id="id_lon" class="form-control" value="{{ warehouse.longitude }}" required>
+                                <input type="number" step="any" name="longitude" id="id_lon" class="form-control bg-light" 
+                                    value="{{ warehouse.longitude|default_if_none:'' }}" 
+                                    readonly style="cursor: not-allowed;" required>
                             </div>
                         </div>
 
@@ -43,14 +47,18 @@
                             <div class="col-6 mb-3">
                                 <label class="form-label fw-bold">Phí cơ bản</label>
                                 <div class="input-group">
-                                    <input type="number" name="base_fee" class="form-control" value="{{ warehouse.base_fee }}" required>
+                                    <input type="number" name="base_fee" class="form-control" 
+                                        value="{{ warehouse.base_fee }}" min="0"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                                     <span class="input-group-text">đ</span>
                                 </div>
                             </div>
                             <div class="col-6 mb-3">
                                 <label class="form-label fw-bold">Phí/Km</label>
                                 <div class="input-group">
-                                    <input type="number" name="fee_per_km" class="form-control" value="{{ warehouse.fee_per_km }}" required>
+                                    <input type="number" name="fee_per_km" class="form-control" 
+                                        value="{{ warehouse.fee_per_km }}" min="0"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '');" required>
                                     <span class="input-group-text">đ</span>
                                 </div>
                             </div>
@@ -90,13 +98,19 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // 1. Khởi tạo bản đồ
-    var latInit = parseFloat("{{ warehouse.latitude|default:10.79 }}");
-    var lonInit = parseFloat("{{ warehouse.longitude|default:106.66 }}");
+// 1. Khởi tạo bản đồ
+    var latStr = "{{ warehouse.latitude|default_if_none:'' }}";
+    var lonStr = "{{ warehouse.longitude|default_if_none:'' }}";
+
+    // Kiểm tra nếu có dữ liệu từ DB thì dùng, nếu không thì lấy mặc định
+    var latInit = (latStr && latStr !== "None") ? parseFloat(latStr.replace(',', '.')) : 10.79;
+    var lonInit = (lonStr && lonStr !== "None") ? parseFloat(lonStr.replace(',', '.')) : 106.66;
 
     var map = L.map('map-picker').setView([latInit, lonInit], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
 
     var marker = L.marker([latInit, lonInit], {draggable: true}).addTo(map);

@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'admin/admin_base.html' %}
 
 {% block content %}
 <div class="container mt-4">
@@ -51,9 +51,17 @@
                         <td>{{ w.base_fee }} đ</td>
                         <td>{{ w.fee_per_km }} đ</td>
                         <td class="text-center">
-                            <a href="{% url 'warehouse_edit' w.id %}" class="btn btn-sm btn-warning fw-bold">
-                                <i class="bi bi-pencil-square"></i> Sửa
-                            </a>
+                            <div class="btn-group">
+                                <a href="{% url 'warehouse_edit' w.id %}" class="btn btn-sm btn-warning fw-bold">
+                                    <i class="bi bi-pencil-square"></i> Sửa
+                                </a>
+                                
+                                <a href="{% url 'warehouse_delete' w.id %}" 
+                                class="btn btn-sm btn-danger fw-bold ms-1"
+                                onclick="return confirm('Bạn có chắc chắn muốn xóa kho [{{ w.name }}] không? Mọi dữ liệu tồn kho liên quan sẽ bị mất!')">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}

@@ -2,40 +2,102 @@
 {% block content %}
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Đăng bài viết mới</h4>
+        <div class="col-md-10"> 
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white rounded-top-4 py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i> {% if post %}Chỉnh sửa bài viết{% else %}Đăng bài viết mới{% endif %}</h4>
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-4 p-md-5">
                     
-                    <form action="{% url 'blog_create' %}" method="POST" enctype="multipart/form-data">
+                    <form action="{% url 'admin_blog_save' %}" method="POST" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Tiêu đề bài viết <span class="text-danger">*</span></label>
-                            <input type="text" name="title" class="form-control" required placeholder="Nhập tiêu đề...">
-                        </div>
+                        {% if post %}
+                        <input type="hidden" name="id" value="{{ post.id }}">
+                        {% endif %}
                         
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Ảnh bìa (Tùy chọn)</label>
-                            <input type="file" name="thumbnail" class="form-control" accept="image/*">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold fs-5">Tiêu đề bài viết <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control form-control-lg" required placeholder="Nhập tiêu đề thật ấn tượng..." value="{{ post.title|default:'' }}">
                         </div>
                         
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Nội dung bài viết <span class="text-danger">*</span></label>
-                            <textarea name="content" class="form-control" rows="10" required placeholder="Nhập nội dung chi tiết..."></textarea>
+                            <label class="form-label fw-bold fs-5">Ảnh bìa (Tùy chọn)</label>
+                            {% if post and post.thumbnail %}
+                                <div class="mb-3">
+                                    <img src="{{ post.thumbnail.url }}" alt="Thumbnail" width="200" class="rounded-3 shadow-sm border">
+                                </div>
+                            {% endif %}
+                            <input type="file" name="thumbnail" class="form-control" accept="image/*">
                         </div>
                         
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'blog_list' %}" class="btn btn-outline-secondary">Hủy bỏ</a>
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-cloud-upload"></i> Đăng bài</button>
+                        <div class="mb-5">
+                            <label class="form-label fw-bold fs-5">Nội dung bài viết <span class="text-danger">*</span></label>
+                            <textarea name="content" id="editor">{{ post.content|default:''|safe }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between border-top pt-4">
+                            <a href="{% url 'admin_blogs' %}" class="btn btn-light border px-4 fw-bold">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary px-5 fw-bold">
+                                <i class="bi bi-cloud-upload me-2"></i> 
+                                {% if post %}Lưu thay đổi{% else %}Xuất bản bài viết{% endif %}
+                            </button>
                         </div>
                     </form>
-
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#editor' ), {
+            toolbar: [ 
+                'heading', '|', 
+                'bold', 'italic', 'underline', '|', 
+                'bulletedList', 'numberedList', '|', 
+                'blockQuote', 'insertTable', 'link', '|', 
+                'undo', 'redo' 
+            ],
+            placeholder: 'Bắt đầu viết những chia sẻ tuyệt vời của bạn tại đây...'
+        } )
+        .catch( error => {
+            console.error( error );
+        } );
+</script>
+
+<style>
+    /* Chỉnh chiều cao và font chữ cho khung soạn thảo */
+    .ck-editor__editable_inline {
+        min-height: 400px;
+        padding: 20px 30px !important;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        color: #2c3e50;
+    }
+    
+    /* Bo góc thanh công cụ (Toolbar) */
+    .ck-toolbar {
+        border-top-left-radius: 0.5rem !important;
+        border-top-right-radius: 0.5rem !important;
+        background-color: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+    }
+
+    /* Bo góc phần khung nhập liệu bên dưới */
+    .ck-editor__main .ck-content {
+        border-bottom-left-radius: 0.5rem !important;
+        border-bottom-right-radius: 0.5rem !important;
+        border-color: #dee2e6 !important;
+    }
+
+    /* Đổ bóng màu xanh đẹp mắt khi Focus (Click chuột vào để gõ) */
+    .ck-editor__editable.ck-focused:not(.ck-editor__nested-editable) {
+        border: 1px solid #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+</style>
 {% endblock %}

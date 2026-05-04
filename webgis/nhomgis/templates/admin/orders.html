@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'admin/admin_base.html' %}
 {% load humanize %}
 {% block content %}
 <div class="container mt-4 mb-5">
@@ -21,7 +21,12 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Mã Đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th>Tổng tiền</th><th>Trạng thái</th><th>Cập nhật</th>
+                        <th>Mã Đơn</th>
+                        <th>Khách hàng</th>
+                        <th class="d-none-mobile">Ngày đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Cập nhật</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -29,7 +34,7 @@
                     <tr>
                         <td class="fw-bold text-primary">#{{ o.id }}</td>
                         <td>{{ o.user.username }}</td>
-                        <td>{{ o.order_date|date:"d/m/Y H:i" }}</td>
+                        <td class="d-none-mobile" >{{ o.order_date|date:"d/m/Y H:i" }}</td>
                         <td class="text-danger fw-bold">{{ o.total_amount|intcomma }}đ</td>
                         <td>
                             {% if o.status == 'CHỜ XÁC NHẬN' %}<span class="badge bg-warning text-dark">{{ o.status }}</span>
@@ -38,17 +43,23 @@
                             {% else %}<span class="badge bg-danger">{{ o.status }}</span>{% endif %}
                         </td>
                         <td>
-                            <form action="{% url 'order_update_status' %}" method="POST" class="d-flex gap-2">
-                                {% csrf_token %}
-                                <input type="hidden" name="id" value="{{ o.id }}">
-                                <select name="status" class="form-select form-select-sm" style="width: 140px;">
-                                    <option value="CHỜ XÁC NHẬN" {% if o.status == 'CHỜ XÁC NHẬN' %}selected{% endif %}>Chờ xác nhận</option>
-                                    <option value="ĐANG GIAO" {% if o.status == 'ĐANG GIAO' %}selected{% endif %}>Đang giao</option>
-                                    <option value="ĐÃ GIAO" {% if o.status == 'ĐÃ GIAO' %}selected{% endif %}>Đã giao</option>
-                                    <option value="ĐÃ HỦY" {% if o.status == 'ĐÃ HỦY' %}selected{% endif %}>Đã hủy</option>
-                                </select>
-                                <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save"></i></button>
-                            </form>
+                            {% if o.status == 'ĐÃ GIAO' or o.status == 'ĐÃ HỦY' %}
+                                <div class="text-muted" style="width: 140px; text-align: center; font-size: 0.9rem;">
+                                    <i class="bi bi-lock-fill"></i> Đã chốt
+                                </div>
+                            {% else %}
+                                <form action="{% url 'order_update_status' %}" method="POST" class="d-flex gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="id" value="{{ o.id }}">
+                                    <select name="status" class="form-select form-select-sm" style="width: 140px;">
+                                        <option value="CHỜ XÁC NHẬN" {% if o.status == 'CHỜ XÁC NHẬN' %}selected{% endif %}>Chờ xác nhận</option>
+                                        <option value="ĐANG GIAO" {% if o.status == 'ĐANG GIAO' %}selected{% endif %}>Đang giao</option>
+                                        <option value="ĐÃ GIAO">Đã giao</option>
+                                        <option value="ĐÃ HỦY">Đã hủy</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-save"></i></button>
+                                </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}

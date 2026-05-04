@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'admin/admin_base.html' %}
 {% load humanize %}
 {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -30,6 +30,7 @@
                     <div class="input-group">
                         <input type="text" id="custom-address-input" class="form-control" placeholder="Nhập địa chỉ (VD: Quận 1, TP.HCM)...">
                         <button class="btn btn-primary fw-bold" type="button" onclick="searchAddress()">Tìm</button>
+                        <button class="btn btn-outline-danger fw-bold" type="button" onclick="removeCustomMarker()">Xóa</button>
                     </div>
                     <small class="text-muted mt-2 d-block"><i>* Hoặc click/kéo thả điểm ghim màu xanh trên bản đồ.</i></small>
                 </div>
@@ -79,8 +80,10 @@
 <script>
     // 1. Khởi tạo bản đồ - ĐÃ CHUYỂN TÂM VỀ TP. HỒ CHÍ MINH
     var map = L.map('map').setView([10.762622, 106.660172], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap - KingMate Logistics'
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
 
     var warehousesData = [];
@@ -190,11 +193,11 @@
             });
         });
 
-    // 6. Hàm Tính toán khoảng cách (Không so sánh, chỉ hiển thị số KM)
+    // 6. Hàm Tính toán khoảng cách và Vẽ đường đi (Có phân cấp highlight)
     async function calculateDistances(order) {
         selectedOrder = order;
         
-        // Xóa đường cũ
+        // Xóa các đường cũ trên bản đồ
         routeLayers.forEach(layer => map.removeLayer(layer));
         routeLayers = [];
 
@@ -204,37 +207,48 @@
 
         let results = [];
 
-        // Quét Kho
+        // 6.1 Quét tính quãng đường từ tất cả các Kho
         let promises = warehousesData.map(async (w) => {
-            const url = `http://router.project-osrm.org/route/v1/driving/${w.lon},${w.lat};${order.lon},${order.lat}?overview=full&geometries=geojson`;
+            const url = `https://router.project-osrm.org/route/v1/driving/${w.lon},${w.lat};${order.lon},${order.lat}?overview=full&geometries=geojson`;
             try {
                 const res = await fetch(url);
                 const data = await res.json();
                 if(data.code === 'Ok') {
-                    results.push({ name: w.name, distance: data.routes[0].distance / 1000, coords: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), isCustom: false });
+                    results.push({ 
+                        name: w.name, 
+                        distance: data.routes[0].distance / 1000, 
+                        coords: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), 
+                        isCustom: false 
+                    });
                 }
             } catch(e) {}
         });
 
-        // Quét Điểm Tùy Chỉnh
+        // 6.2 Quét tính quãng đường từ Điểm Tùy Chỉnh (Nếu có)
         if (customOriginMarker) {
             let customLat = customOriginMarker.getLatLng().lat;
             let customLng = customOriginMarker.getLatLng().lng;
             promises.push((async () => {
-                const url = `http://router.project-osrm.org/route/v1/driving/${customLng},${customLat};${order.lon},${order.lat}?overview=full&geometries=geojson`;
+                const url = `https://router.project-osrm.org/route/v1/driving/${customLng},${customLat};${order.lon},${order.lat}?overview=full&geometries=geojson`;
                 try {
                     const res = await fetch(url);
                     const data = await res.json();
                     if(data.code === 'Ok') {
-                        results.push({ name: "Điểm tùy chỉnh của bạn", distance: data.routes[0].distance / 1000, coords: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), isCustom: true });
+                        results.push({ 
+                            name: "Điểm tùy chỉnh của bạn", 
+                            distance: data.routes[0].distance / 1000, 
+                            coords: data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]), 
+                            isCustom: true 
+                        });
                     }
                 } catch(e) {}
             })());
         }
 
+        // Chờ tải xong tất cả lộ trình
         await Promise.all(promises);
         
-        // Vẫn sắp xếp khoảng cách từ thấp tới cao để dễ nhìn, nhưng bỏ đi cột đánh giá
+        // Sắp xếp theo khoảng cách (Từ gần nhất đến xa nhất)
         results.sort((a, b) => a.distance - b.distance);
         tbody.innerHTML = '';
 
@@ -243,27 +257,74 @@
             return;
         }
 
-        // Đẩy vào bảng hiển thị
-        results.forEach((res) => {
-            // Vẽ Line
+        // Tách riêng Điểm tùy chỉnh và Các kho hàng để vẽ theo thứ tự (Vẽ sau nằm trên)
+        let customRoute = results.find(r => r.isCustom);
+        let warehouseRoutes = results.filter(r => !r.isCustom);
+
+        // 6.3 VẼ CÁC KHO HÀNG (Kho gần nhất vẽ rõ, càng xa càng mờ)
+        warehouseRoutes.forEach((res, index) => {
+            // Kho gần nhất (index 0) nét liền, màu xanh lá. Xa hơn thì nét đứt, màu xám.
+            let isClosest = (index === 0);
+            
+            // Logic mờ dần cho các kho xa
+            let opacity = isClosest ? 0.9 : Math.max(0.2, 0.6 - (index * 0.15));
+            let weight = isClosest ? 5 : Math.max(2, 4 - index);
+
             const polyline = L.polyline(res.coords, {
-                color: res.isCustom ? '#0d6efd' : '#6c757d',
-                weight: res.isCustom ? 5 : 4,
-                opacity: 0.8
+                color: isClosest ? '#198754' : '#6c757d', // Xanh lá hoặc Xám
+                weight: weight,
+                opacity: opacity,
+                dashArray: isClosest ? '' : '5, 8', // Nét đứt nếu không phải kho gần nhất
+                lineJoin: 'round'
             }).addTo(map);
             routeLayers.push(polyline);
 
-            // Bảng kết quả
+            // Đẩy vào bảng hiển thị
             tbody.innerHTML += `
                 <tr>
-                    <td class="fw-bold ${res.isCustom ? 'text-primary' : ''}">${res.name}</td>
-                    <td class="fw-bold fs-5 ${res.isCustom ? 'text-primary' : 'text-danger'}">${res.distance.toFixed(2)} km</td>
+                    <td class="fw-bold ${isClosest ? 'text-success' : 'text-muted'}">
+                        ${res.name} ${isClosest ? '<span class="badge bg-success ms-1">Gần nhất</span>' : ''}
+                    </td>
+                    <td class="fw-bold fs-5 ${isClosest ? 'text-success' : 'text-muted'}">${res.distance.toFixed(2)} km</td>
                 </tr>
             `;
         });
 
-        // Zoom vừa đủ nhìn thấy toàn bộ đường vẽ
-        map.fitBounds(L.polyline(results[0].coords).getBounds(), {padding: [50, 50]});
+        // 6.4 VẼ ĐIỂM TÙY CHỈNH (Vẽ cuối cùng để nổi đè lên trên tất cả)
+        if (customRoute) {
+            const polyline = L.polyline(customRoute.coords, {
+                color: '#0d6efd', // Màu Xanh dương đậm
+                weight: 6,        // Nét to nhất
+                opacity: 1,
+                lineJoin: 'round'
+            }).addTo(map);
+            routeLayers.push(polyline);
+
+            // Đưa Điểm tùy chỉnh lên dòng đầu tiên của bảng
+            tbody.innerHTML = `
+                <tr class="table-primary">
+                    <td class="fw-bold text-primary"><i class="bi bi-geo-alt-fill"></i> ${customRoute.name}</td>
+                    <td class="fw-bold fs-5 text-primary">${customRoute.distance.toFixed(2)} km</td>
+                </tr>
+            ` + tbody.innerHTML;
+        }
+
+        // Zoom bản đồ vừa vặn với vùng chứa tất cả các đường
+        let allCoords = results.flatMap(r => r.coords);
+        map.fitBounds(L.polyline(allCoords).getBounds(), {padding: [50, 50]});
     }
+    function removeCustomMarker() {
+    if (customOriginMarker) {
+        map.removeLayer(customOriginMarker);
+        customOriginMarker = null;
+        document.getElementById('custom-address-input').value = '';
+        // Cập nhật lại đường đi nếu đang chọn đơn hàng
+        if (selectedOrder) calculateDistances(selectedOrder);
+        else {
+            routeLayers.forEach(layer => map.removeLayer(layer));
+            routeLayers = [];
+        }
+    }
+}
 </script>
 {% endblock %}

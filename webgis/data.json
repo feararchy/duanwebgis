@@ -1,0 +1,662 @@
+[
+{
+    "model": "admin.logentry",
+    "pk": 1,
+    "fields": {
+        "action_time": "2026-02-05T14:43:00.872Z",
+        "user": 1,
+        "content_type": 11,
+        "object_id": "1",
+        "object_repr": "kho gạch",
+        "action_flag": 1,
+        "change_message": "[{\"added\": {}}]"
+    }
+},
+{
+    "model": "admin.logentry",
+    "pk": 2,
+    "fields": {
+        "action_time": "2026-04-01T06:58:04.479Z",
+        "user": 1,
+        "content_type": 11,
+        "object_id": "1",
+        "object_repr": "kho vật liệu tân bình",
+        "action_flag": 2,
+        "change_message": "[{\"changed\": {\"fields\": [\"T\\u00ean kho h\\u00e0ng\"]}}]"
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$6nBgGbC2YXMF4C30gWoPY2$KadKIjfrAMiNIkurmBb6/V7/jIz39snQC4N8Yn3faY8=",
+        "last_login": "2026-04-08T04:01:35.136Z",
+        "is_superuser": true,
+        "username": "admin",
+        "first_name": "",
+        "last_name": "",
+        "email": "",
+        "is_staff": true,
+        "is_active": true,
+        "date_joined": "2026-02-04T04:07:14.550Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$FSVoXgb3ku7IPuqw9ykZXs$iG+IuwmgccUQPkNaJcxuJ5I6+fXcH620R9dehmjOLbw=",
+        "last_login": "2026-04-01T11:03:49.968Z",
+        "is_superuser": false,
+        "username": "user",
+        "first_name": "",
+        "last_name": "",
+        "email": "taikhoan127@meu2526.com",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-02-05T03:12:40.329Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 3,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$urCq7UDeho9LpATtURQAut$kA2PQ+ZaQ2D2Tctkz1P+IUlQEit7e8It6SXuz0B6Ito=",
+        "last_login": "2026-04-01T07:04:34.710Z",
+        "is_superuser": false,
+        "username": "cuongg",
+        "first_name": "",
+        "last_name": "",
+        "email": "feararchy01@gmail.com",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-04-01T06:52:09.979Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "auth.user",
+    "pk": 4,
+    "fields": {
+        "password": "pbkdf2_sha256$1200000$W8YiFLXsfqKX11I71qIhKF$Yvmb1+CPsDks3aBWrvKG69RbWW6rHUe0ObNWaUVS+yU=",
+        "last_login": null,
+        "is_superuser": false,
+        "username": "cuonggg",
+        "first_name": "",
+        "last_name": "",
+        "email": "feararchy02@gmail.com",
+        "is_staff": false,
+        "is_active": true,
+        "date_joined": "2026-04-01T06:52:34.765Z",
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "4krq5segcppsowe4trwdr88gwzanrf5a",
+    "fields": {
+        "session_data": ".eJxVjDEOwyAUQ-_CXCHCJwQ6ds8Z0Ac-JW0FUkimqncvkTK0kgfLz_abOdy37PZGq1siu7KBXX4zj-FJ5QDxgeVeeahlWxfPjwo_aeNzjfS6nd2_g4wt93WSEGOI1sjkAay02GVtEhoUTmSMNn4kpWGYpASRgtIijN0bJJHIsM8X2n43WA:1w5wtp:vysZucsQILh03iIfQLX8pDvSvZaMRln9BjiAGvgaEQE",
+        "expire_date": "2026-04-10T02:26:13.328Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "85i2sabpc5dkevqf93poudslpqjscncs",
+    "fields": {
+        "session_data": ".eJxVjDEOwyAUQ-_CXCHCJwQ6ds8Z0Ac-JW0FUkimqncvkTK0kgfLz_abOdy37PZGq1siu7KBXX4zj-FJ5QDxgeVeeahlWxfPjwo_aeNzjfS6nd2_g4wt93WSEGOI1sjkAay02GVtEhoUTmSMNn4kpWGYpASRgtIijN0bJJHIsM8X2n43WA:1vyOPn:jEghqcBVmrAB5S9DFKgVQIVTkFZJXlbKl0tOlSA7Ymc",
+        "expire_date": "2026-03-20T06:11:59.915Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "9ag2jw2544c1zwzb74qzoe28dwwi3t2o",
+    "fields": {
+        "session_data": ".eJxVTMsKgzAQ_Jc9S4i7GhOPvfsNskk21bYo-DiJ_94IHloYmGFeB_S8b0O_r7L0Y4QWSih-Pc_hLdMVxBdPz1mFedqW0aurou50Vd0c5fO4u38HA69DXiekGEN0FpMncug4w7mkDVXciLXG-loqQ2WDSDqFyuhQZ21ZdBKbTwMvG7QHIEFbFoA603l-ARUmPPU:1wAL89:23PUBE6i458DNTgTWBLS8reI0QsbP0klxb1qPcKnTz0",
+        "expire_date": "2026-04-22T05:07:09.874Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "o6g2t6oja9cmrqq18pkk18suui5fbw4k",
+    "fields": {
+        "session_data": ".eJxVjDEOwyAUQ-_CXCHCJwQ6ds8Z0Ac-JW0FUkimqncvkTK0kgfLz_abOdy37PZGq1siu7KBXX4zj-FJ5QDxgeVeeahlWxfPjwo_aeNzjfS6nd2_g4wt93WSEGOI1sjkAay02GVtEhoUTmSMNn4kpWGYpASRgtIijN0bJJHIsM8X2n43WA:1w5xTZ:vLyUSouT2gcxpCy2X0j9S_X1Zx6pIeVBBVlXQhiJgvg",
+        "expire_date": "2026-04-10T03:03:09.504Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "pxp1ee6s7wop06or7fpdffs5yvy3ljqj",
+    "fields": {
+        "session_data": ".eJxVjDEOwyAUQ-_CXCHCJwQ6ds8Z0Ac-JW0FUkimqncvkTK0kgfLz_abOdy37PZGq1siu7KBXX4zj-FJ5QDxgeVeeahlWxfPjwo_aeNzjfS6nd2_g4wt93WSEGOI1sjkAay02GVtEhoUTmSMNn4kpWGYpASRgtIijN0bJJHIsM8X2n43WA:1w7tNE:6Nioh54VKfYoCDYi19pjgWd2o86SkmMyikf2LhE7FeA",
+        "expire_date": "2026-04-15T11:04:36.117Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "tsmxgtj6fiusuyb99won18bwtddw9dqi",
+    "fields": {
+        "session_data": ".eJxVjDEOwyAUQ-_CXCHCJwQ6ds8Z0Ac-JW0FUkimqncvkTK0kgfLz_abOdy37PZGq1siu7KBXX4zj-FJ5QDxgeVeeahlWxfPjwo_aeNzjfS6nd2_g4wt93WSEGOI1sjkAay02GVtEhoUTmSMNn4kpWGYpASRgtIijN0bJJHIsM8X2n43WA:1vnq0U:e9so0NfXUviHMbgOZQRgAYf0YNOe0iUzlHyeVk2bHfY",
+        "expire_date": "2026-02-19T03:26:14.418Z"
+    }
+},
+{
+    "model": "sessions.session",
+    "pk": "y6w4ifk494c7o9hv90ehpnamfnuic785",
+    "fields": {
+        "session_data": ".eJxVjDEOwyAUQ-_CXCHCJwQ6ds8Z0Ac-JW0FUkimqncvkTK0kgfLz_abOdy37PZGq1siu7KBXX4zj-FJ5QDxgeVeeahlWxfPjwo_aeNzjfS6nd2_g4wt93WSEGOI1sjkAay02GVtEhoUTmSMNn4kpWGYpASRgtIijN0bJJHIsM8X2n43WA:1vo0sM:1Y669OgnPMhzFDdp6F-zd6xn85w7kZSDWGSLnnqLrGA",
+        "expire_date": "2026-02-19T15:02:34.145Z"
+    }
+},
+{
+    "model": "nhomgis.category",
+    "pk": 6,
+    "fields": {
+        "name": "Cát Xây Dựng"
+    }
+},
+{
+    "model": "nhomgis.category",
+    "pk": 7,
+    "fields": {
+        "name": "Đá Xây Dựng"
+    }
+},
+{
+    "model": "nhomgis.category",
+    "pk": 8,
+    "fields": {
+        "name": "Xi Măng"
+    }
+},
+{
+    "model": "nhomgis.category",
+    "pk": 9,
+    "fields": {
+        "name": "Sắt Thép"
+    }
+},
+{
+    "model": "nhomgis.category",
+    "pk": 10,
+    "fields": {
+        "name": "Gạch Xây Dựng"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 10,
+    "fields": {
+        "category": 6,
+        "name": "Cát San Lấp",
+        "price": 150000,
+        "unit": "Khối",
+        "description": "",
+        "stock_quantity": 500,
+        "image": "products/z4762798407348_7b6f011f8bd3515f8c4a9cf4c41f6ddb.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 11,
+    "fields": {
+        "category": 6,
+        "name": "Cát Xây Tô (Cát Đen)",
+        "price": 250000,
+        "unit": "Khối",
+        "description": "",
+        "stock_quantity": 300,
+        "image": "products/image-20210324105129-1.jpeg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 12,
+    "fields": {
+        "category": 6,
+        "name": "Cát Vàng Bê Tông",
+        "price": 4200000,
+        "unit": "Khối",
+        "description": "",
+        "stock_quantity": 200,
+        "image": "products/cat-vang-xay-dung_ykgPGGP.jpeg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 13,
+    "fields": {
+        "category": 7,
+        "name": "Đá 1x2 Xanh",
+        "price": 350000,
+        "unit": "Khối",
+        "description": "",
+        "stock_quantity": 400,
+        "image": "products/giá-đá-xây-dựng-1x2-tại-Biên-Hòa-Đồng-Nai-2.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 14,
+    "fields": {
+        "category": 7,
+        "name": "Đá 4x6",
+        "price": 280000,
+        "unit": "Khối",
+        "description": "",
+        "stock_quantity": 250,
+        "image": "products/image-20200928161323-1.jpeg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 15,
+    "fields": {
+        "category": 7,
+        "name": "Đá Mi Bụi",
+        "price": 220000,
+        "unit": "Khối",
+        "description": "",
+        "stock_quantity": 300,
+        "image": "products/da-mi-bui-1.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 16,
+    "fields": {
+        "category": 8,
+        "name": "Xi măng Hà Tiên 1 Đa Dụng",
+        "price": 88000,
+        "unit": "Bao (50kg)",
+        "description": "",
+        "stock_quantity": 1000,
+        "image": "products/Xi-Mang-Ha-Tien.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 17,
+    "fields": {
+        "category": 8,
+        "name": "Xi măng Insee (Holcim)",
+        "price": 92000,
+        "unit": "Bao (50kg)",
+        "description": "",
+        "stock_quantity": 800,
+        "image": "products/ximang-insee.png"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 18,
+    "fields": {
+        "category": 8,
+        "name": "Xi măng Trắng SCG",
+        "price": 130000,
+        "unit": "Bao (40kg)",
+        "description": "",
+        "stock_quantity": 150,
+        "image": "products/3-15.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 19,
+    "fields": {
+        "category": 9,
+        "name": "Thép cuộn Hòa Phát Phi 6",
+        "price": 16500,
+        "unit": "Kg",
+        "description": "",
+        "stock_quantity": 5000,
+        "image": "products/thep-cuon-phi-6-2.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 20,
+    "fields": {
+        "category": 9,
+        "name": "Thép cây Pomina D10 (Vằn)",
+        "price": 112000,
+        "unit": "Cây (11.7m)",
+        "description": "",
+        "stock_quantity": 1500,
+        "image": "products/1581129528_9afdb01339ef137ea2f3fb1aa64a9024.jpeg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 21,
+    "fields": {
+        "category": 9,
+        "name": "Thép hộp mạ kẽm Hoa Sen 40x80x1.4mm",
+        "price": 320000,
+        "unit": "Cây (6m)",
+        "description": "",
+        "stock_quantity": 400,
+        "image": "products/thep-hop-hoa-phat-1.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 22,
+    "fields": {
+        "category": 10,
+        "name": "Gạch ống 4 lỗ Tuynel Bình Dương",
+        "price": 12000,
+        "unit": "Viên",
+        "description": "",
+        "stock_quantity": 50000,
+        "image": "products/gach4lo2-0504.png"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 23,
+    "fields": {
+        "category": 10,
+        "name": "Gạch thẻ đặc Tuynel",
+        "price": 30000,
+        "unit": "Viên",
+        "description": "",
+        "stock_quantity": 30000,
+        "image": "products/gach-dac-Tuynel-gach-xay-khogn-trat-xuan-hoa-ha-noi-mau-3.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 24,
+    "fields": {
+        "category": 10,
+        "name": "Gạch Block xây tường (9x19x39)",
+        "price": 55000,
+        "unit": "Viên",
+        "description": "",
+        "stock_quantity": 10000,
+        "image": "products/Don-gia-xay-tuong-rao-bang-gach-block.jpg"
+    }
+},
+{
+    "model": "nhomgis.product",
+    "pk": 25,
+    "fields": {
+        "category": 6,
+        "name": "test chuyển ảnh",
+        "price": 111111,
+        "unit": "Khối",
+        "description": "ádasf",
+        "stock_quantity": 75,
+        "image": "products/Don-gia-xay-tuong-rao-bang-gach-block_9Yg7Veu.jpg"
+    }
+},
+{
+    "model": "nhomgis.productimage",
+    "pk": 1,
+    "fields": {
+        "product": 25,
+        "image": "product_gallery/gach-dac-Tuynel-gach-xay-khogn-trat-xuan-hoa-ha-noi-mau-3.jpg"
+    }
+},
+{
+    "model": "nhomgis.productimage",
+    "pk": 2,
+    "fields": {
+        "product": 25,
+        "image": "product_gallery/gach4lo2-0504.png"
+    }
+},
+{
+    "model": "nhomgis.productimage",
+    "pk": 3,
+    "fields": {
+        "product": 25,
+        "image": "product_gallery/thep-hop-hoa-phat-1.jpg"
+    }
+},
+{
+    "model": "nhomgis.productimage",
+    "pk": 4,
+    "fields": {
+        "product": 25,
+        "image": "product_gallery/1581129528_9afdb01339ef137ea2f3fb1aa64a9024.jpeg"
+    }
+},
+{
+    "model": "nhomgis.productimage",
+    "pk": 5,
+    "fields": {
+        "product": 25,
+        "image": "product_gallery/thep-cuon-phi-6-2.jpg"
+    }
+},
+{
+    "model": "nhomgis.productimage",
+    "pk": 6,
+    "fields": {
+        "product": 25,
+        "image": "product_gallery/3-15.jpg"
+    }
+},
+{
+    "model": "nhomgis.storereview",
+    "pk": 1,
+    "fields": {
+        "user": 1,
+        "stars": 5,
+        "comment": "vật liệu chất lượng",
+        "created_at": "2026-04-08T04:02:16.346Z"
+    }
+},
+{
+    "model": "nhomgis.post",
+    "pk": 1,
+    "fields": {
+        "title": "test",
+        "content": "aaaaaaaaaaaaaaaaaaaaaaa",
+        "thumbnail": "blog/Windows_Server_2012-2025-04-24-12-42-29.png",
+        "author": 1,
+        "created_at": "2026-04-08T04:32:35.296Z"
+    }
+},
+{
+    "model": "nhomgis.warehouse",
+    "pk": 1,
+    "fields": {
+        "name": "kho vật liệu tân bình",
+        "address": "10 đồng nai p2 tân bình",
+        "latitude": 10.807833,
+        "longitude": 106.66575,
+        "base_fee": 15000,
+        "fee_per_km": 5000
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 1,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-04T09:53:37.808Z",
+        "shipping_fee": 0,
+        "total_amount": 94000,
+        "status": "ĐÃ GIAO",
+        "shipping_address": "Địa chỉ mặc định",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 2,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-04T09:53:55.150Z",
+        "shipping_fee": 0,
+        "total_amount": 376000,
+        "status": "ĐANG GIAO",
+        "shipping_address": "Địa chỉ mặc định",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 3,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-05T02:44:19.331Z",
+        "shipping_fee": 0,
+        "total_amount": 376000,
+        "status": "ĐANG GIAO",
+        "shipping_address": "Địa chỉ mặc định",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 4,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-05T02:44:32.419Z",
+        "shipping_fee": 0,
+        "total_amount": 94000,
+        "status": "ĐÃ GIAO",
+        "shipping_address": "Địa chỉ mặc định",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 5,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-05T02:50:50.635Z",
+        "shipping_fee": 0,
+        "total_amount": 94000,
+        "status": "CHỜ XÁC NHẬN",
+        "shipping_address": "Địa chỉ mặc định",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 6,
+    "fields": {
+        "user": 2,
+        "order_date": "2026-02-05T14:21:45.678Z",
+        "shipping_fee": 0,
+        "total_amount": 470000,
+        "status": "ĐÃ HỦY",
+        "shipping_address": "10a dong nai",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 7,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-05T14:34:20.219Z",
+        "shipping_fee": 0,
+        "total_amount": 282000,
+        "status": "ĐANG GIAO",
+        "shipping_address": "10 đồng nai, phường 2, tân bình",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 8,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-02-05T14:47:41.105Z",
+        "shipping_fee": 0,
+        "total_amount": 94000,
+        "status": "CHỜ XÁC NHẬN",
+        "shipping_address": "lê văn sỹ",
+        "customer_lat": null,
+        "customer_lon": null
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 9,
+    "fields": {
+        "user": 2,
+        "order_date": "2026-02-05T14:51:36.588Z",
+        "shipping_fee": 0,
+        "total_amount": 94000,
+        "status": "ĐANG GIAO",
+        "shipping_address": "Trường tiểu học Đoàn Thị Điểm, 16, Trần Văn Ơn, Khu phố 28, Phường Tân Sơn Nhì, Thành phố Hồ Chí Minh, 72011, Việt Nam",
+        "customer_lat": 10.802213098045128,
+        "customer_lon": 106.63055419921875
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 10,
+    "fields": {
+        "user": 2,
+        "order_date": "2026-02-05T15:02:23.049Z",
+        "shipping_fee": 103200,
+        "total_amount": 385200,
+        "status": "CHỜ XÁC NHẬN",
+        "shipping_address": "Hẻm 54 Trần Quang Khải, Khu phố 9, Phường Tân Định, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, 72200, Việt Nam",
+        "customer_lat": 10.832694800567907,
+        "customer_lon": 106.53648376464845
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 11,
+    "fields": {
+        "user": 2,
+        "order_date": "2026-03-06T06:11:23.059Z",
+        "shipping_fee": 95700,
+        "total_amount": 847700,
+        "status": "ĐÃ GIAO",
+        "shipping_address": "Xã Nhà Bè, Thành phố Hồ Chí Minh, 72915, Việt Nam",
+        "customer_lat": 10.713363841553253,
+        "customer_lon": 106.69097900390626
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 12,
+    "fields": {
+        "user": 1,
+        "order_date": "2026-04-01T06:54:09.466Z",
+        "shipping_fee": 26000,
+        "total_amount": 120000,
+        "status": "ĐÃ GIAO",
+        "shipping_address": "Hẻm 93 Đường số 6, Phường Hạnh Thông, Thành phố Thủ Đức, Thành phố Hồ Chí Minh, 70048, Việt Nam",
+        "customer_lat": 10.817857421969991,
+        "customer_lon": 106.67518615722658
+    }
+},
+{
+    "model": "nhomgis.order",
+    "pk": 13,
+    "fields": {
+        "user": 3,
+        "order_date": "2026-04-01T07:04:52.310Z",
+        "shipping_fee": 87600,
+        "total_amount": 463600,
+        "status": "CHỜ XÁC NHẬN",
+        "shipping_address": "Ấp 39, Xã Vĩnh Lộc, Thành phố Hồ Chí Minh, 71821, Việt Nam",
+        "customer_lat": 10.834718022526589,
+        "customer_lon": 106.56806945800781
+    }
+}
+]

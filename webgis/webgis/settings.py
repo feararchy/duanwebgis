@@ -40,6 +40,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'webgis.urls'
@@ -71,7 +72,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'webgis_db',      # Tên DB bạn tạo trong pgAdmin
         'USER': 'postgres',       # User mặc định
-        'PASSWORD': '123456',          # Mật khẩu của bạn
+        'PASSWORD': '123',          # Mật khẩu của bạn
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -108,9 +109,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
 
 # Đường dẫn URL để truy cập ảnh trên web
-MEDIA_URL = '/media/'
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Thư mục vật lý trên máy tính để lưu ảnh upload
+# Kiểm tra xem có đúng như này không
+MEDIA_URL = '/media/'  # Phải có gạch chéo 2 đầu
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Cấu hình gửi Mail qua Mailtrap

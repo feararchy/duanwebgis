@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Quản Trị - KINGMATE</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        body { 
+            margin: 0; 
+            font-family: Arial, sans-serif; 
+            background-color: #f8f9fa; /* Màu nền xám nhạt giống bootstrap */
+        }
+        
+        /* Thanh Header Cố Định Trạng Thái */
+        .admin-header {
+            background-color: #212529; /* Đen nhạt */
+            color: #fff; 
+            padding: 15px 25px;
+            display: flex; 
+            justify-content: space-between;
+            position: fixed; 
+            width: 100%; 
+            top: 0; 
+            z-index: 1050;
+        }
+
+        /* Menu Sidebar Bên Trái */
+        .sidebar {
+            height: 100vh; 
+            width: 250px; 
+            position: fixed;
+            top: 56px; /* Đẩy xuống chừa chỗ cho Header */
+            left: 0; 
+            background-color: #343a40; 
+            padding-top: 15px;
+            overflow-y: auto; 
+            z-index: 1000;
+        }
+
+        .sidebar a {
+            padding: 12px 20px; 
+            text-decoration: none; 
+            font-size: 15px;
+            color: #c2c7d0; 
+            display: block; 
+            border-bottom: 1px solid #4b545c; 
+            transition: 0.2s;
+        }
+
+        /* Hiệu ứng khi di chuột hoặc đang ở trang đó */
+        .sidebar a:hover, .sidebar a.active { 
+            color: #fff; 
+            background-color: #0d6efd; /* Màu xanh Primary của Bootstrap */
+        }
+        
+        .sidebar a i { 
+            margin-right: 10px; 
+            width: 20px; 
+            text-align: center; 
+        }
+
+        /* Phần Không Gian Bày Nội Dung Chính */
+        .main-content {
+            margin-left: 250px; /* Chừa 250px bên trái cho Sidebar */
+            margin-top: 56px;   /* Chừa 56px phía trên cho Header */
+            padding: 25px; 
+            min-height: 100vh;
+        }
+                /* Sidebar mặc định cho Desktop */
+        .sidebar {
+            height: 100vh; 
+            width: 250px; 
+            position: fixed;
+            top: 56px; 
+            left: 0; 
+            background-color: #343a40; 
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            margin-top: 56px;
+            padding: 25px; 
+            transition: all 0.3s;
+        }
+
+        /* Xử lý cho Tablet và Mobile (Dưới 992px) */
+        @media (max-width: 992px) {
+            .sidebar {
+                left: -250px; /* Ẩn sidebar ra khỏi màn hình bên trái */
+            }
+            .main-content {
+                margin-left: 0; /* Nội dung chính tràn toàn màn hình */
+            }
+            /* Khi muốn hiện menu trên mobile (thêm class active bằng JS) */
+            .sidebar.active {
+                left: 0;
+            }
+        }
+
+        /* Ẩn bớt thông tin header trên mobile để tránh tràn dòng */
+        @media (max-width: 576px) {
+            .admin-header .user-info span {
+                display: none; /* Ẩn chữ "admin", chỉ để lại icon */
+            }
+        }
+                /* Media Queries để hỗ trợ Responsive */
+        @media (max-width: 768px) {
+            /* Ẩn các cột được đánh dấu class 'd-none-mobile' */
+            .d-none-mobile {
+                display: none !important;
+            }
+            
+            /* Thu nhỏ bảng và chữ trên mobile */
+            .table {
+                font-size: 0.85rem;
+            }
+            
+            .main-content {
+                padding: 10px; /* Tiết kiệm không gian */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-header shadow-sm d-flex align-items-center">
+        <div class="d-flex align-items-center">
+            <button class="btn text-white d-lg-none me-3 p-0 border-0" id="sidebarToggle">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+            <div class="logo fw-bold fs-5"><i class="bi bi-buildings"></i> KINGMATE ADMIN</div>
+        </div>
+        
+        <div class="user-info">
+            <a href="{% url 'home' %}" class="text-light text-decoration-none me-3"><i class="bi bi-house-door"></i> Về trang chủ Shop</a>
+            <span class="text-light"><i class="bi bi-person-circle"></i> admin</span>
+        </div>
+    </div>
+
+    <div class="sidebar shadow">
+        <a href="{% url 'dashboard' %}"><i class="bi bi-speedometer2"></i> Bảng Điều Khiển</a>
+        <a href="{% url 'orders' %}"><i class="bi bi-receipt"></i> Quản lý Hóa Đơn</a>
+        <a href="{% url 'products' %}"><i class="bi bi-box-seam"></i> Quản lý Sản Phẩm</a>
+        <a href="{% url 'admin_map' %}"><i class="bi bi-map-fill"></i> Bản Đồ Giao Hàng</a>
+        <a href="{% url 'categories' %}"><i class="bi bi-tags"></i> Quản lý Danh Mục</a>
+        <a href="{% url 'users' %}"><i class="bi bi-people"></i> Quản lý Khách Hàng</a>
+        <a href="{% url 'warehouses' %}"><i class="bi bi-building"></i> Cấu hình Kho</a>
+        <a href="{% url 'inventory_manage' %}"><i class="bi bi-arrow-left-right"></i> Quản lý Xuất/Nhập Kho</a>
+        <a href="{% url 'admin_blogs' %}"><i class="bi bi-journal-text"></i> Quản lý Bài viết</a>
+        <a href="{% url 'admin_about_manage' %}"><i class ="bi bi-journal-text"></i> Quản lý trang giới thiệu </a>
+    </div>
+
+    <div class="main-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast align-items-center text-white bg-{% if message.tags == 'error' %}danger{% else %}success{% endif %} border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body d-flex align-items-center">
+                            <i class="bi bi-info-circle-fill me-2 fs-5"></i> 
+                            <span class="fw-bold">{{ message }}</span>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // [Đoạn code Toast cũ của bạn giữ nguyên ở đây]
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            var toastList = toastElList.map(function(toastEl) {
+                return new bootstrap.Toast(toastEl, { delay: 4000 }).show(); 
+            });
+
+            // --- THÊM MỚI: Xử lý sự kiện click cho menu di động ---
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', function() {
+                    // Thêm hoặc gỡ bỏ class 'active' để thò ra / thụt vào
+                    sidebar.classList.toggle('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

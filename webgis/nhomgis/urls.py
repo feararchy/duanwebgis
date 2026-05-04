@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
@@ -8,9 +8,16 @@ urlpatterns = [
     path('product/<int:product_id>/review/', views.add_review, name='add_review'),
     path('store-review/', views.add_store_review, name='add_store_review'),
     
+    #BLOG
+    path('dashboard/blogs/', views.admin_blogs, name='admin_blogs'),
+    path('dashboard/blogs/add/', views.admin_blog_form, name='admin_blog_add'),
+    path('dashboard/blogs/edit/<int:id>/', views.admin_blog_form, name='admin_blog_edit'),
+    path('dashboard/blogs/save/', views.admin_blog_save, name='admin_blog_save'),
+    path('dashboard/blogs/delete/<int:id>/', views.admin_blog_delete, name='admin_blog_delete'),
     path('blog/', views.blog_list, name='blog_list'),
     path('blog/<int:id>/', views.blog_detail, name='blog_detail'),
-    path('blog/create/', views.blog_create, name='blog_create'),
+    path('comment/like/<int:comment_id>/', views.like_comment, name='like_comment'),
+    path('comment/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
     
     path('about/', views.about, name='about'),
 
@@ -25,6 +32,7 @@ urlpatterns = [
     
     path('cart/', views.cart_view, name='cart'),
     path('cart/add/', views.cart_add, name='cart_add'),
+    path('cart/update/', views.cart_update, name='cart_update'),
     path('cart/remove/', views.cart_remove, name='cart_remove'),
     path('checkout/', views.checkout, name='checkout'),
     
@@ -37,6 +45,13 @@ urlpatterns = [
 
     # ADMIN
     path('dashboard/', views.dashboard, name='dashboard'),
+
+    # BLOGS (QUẢN LÝ BÀI VIẾT CHO ADMIN)
+    path('dashboard/blogs/', views.admin_blogs, name='admin_blogs'),
+    path('dashboard/blogs/add/', views.admin_blog_form, name='admin_blog_add'),
+    path('dashboard/blogs/edit/<int:id>/', views.admin_blog_form, name='admin_blog_edit'),
+    path('dashboard/blogs/save/', views.admin_blog_save, name='admin_blog_save'),
+    path('dashboard/blogs/delete/<int:id>/', views.admin_blog_delete, name='admin_blog_delete'),
     
     # PRODUCTS (GIỮ NGUYÊN)
     path('dashboard/products/', views.products_list, name='products'),
@@ -64,12 +79,19 @@ urlpatterns = [
     path('dashboard/warehouses/add/', views.warehouse_form, name='warehouse_add'),
     path('dashboard/warehouses/edit/<int:id>/', views.warehouse_form, name='warehouse_edit'),
     path('dashboard/warehouses/save/', views.warehouse_save, name='warehouse_save'),
+    path('dashboard/warehouses/delete/<int:id>/', views.warehouse_delete, name='warehouse_delete'), # Thêm dòng này
 
     # INVENTORY
     path('dashboard/inventory/', views.inventory_manage, name='inventory_manage'),
     path('dashboard/inventory/print/<int:transaction_id>/', views.print_inventory_receipt, name='print_inventory_receipt'),
-    
+    path('inventory/export/<int:transaction_id>/', views.export_inventory_excel, name='export_inventory_excel'), 
     # MAP
     path('dashboard/map/', views.admin_map_view, name='admin_map'),
     path('api/orders-locations/', views.api_orders_locations, name='api_orders_locations'),
+
+    path('admin-panel/about/', views.admin_about_manage, name='admin_about_manage'),
+
+    path('clean-stock-now/', views.clean_stock_data, name='clean_stock_now'),
+
+    re_path(r'^.*$', views.custom_catch_all_404),
 ]

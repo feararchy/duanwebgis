@@ -39,7 +39,7 @@
             {% endif %}
 
             <div class="blog-content fs-5 text-dark" style="line-height: 1.8; text-align: justify;">
-                {{ post.content|linebreaks }}
+                {{ post.content|safe }}
             </div>
 
             <div class="mt-5 pt-4 border-top d-flex align-items-center justify-content-between">
@@ -50,10 +50,114 @@
                     <button class="btn btn-outline-danger rounded-circle"><i class="bi bi-envelope"></i></button>
                 </div>
             </div>
+            
+            <div class="mt-5 pt-4 border-top">
+                <h4 class="fw-bold mb-4">{{ comments.count }} Bình luận</h4>
 
-        </div>
+                {% if user.is_authenticated %}
+                <form method="POST" class="mb-5">
+                    {% csrf_token %}
+                    <div class="d-flex align-items-start">
+                        <div class="me-3 mt-1">
+                            <i class="bi bi-person-circle fs-2 text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <textarea name="content" class="form-control mb-2 rounded-3" rows="3" placeholder="Viết bình luận của bạn..." required></textarea>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary px-4 fw-bold rounded-pill">
+                                    <i class="bi bi-send"></i> Gửi bình luận
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-secondary mb-5 text-center rounded-3">
+                    Vui lòng <a href="{% url 'login' %}" class="fw-bold text-primary">Đăng nhập</a> để tham gia thảo luận cùng mọi người.
+                </div>
+                {% endif %}
+
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="d-flex mb-4">
+                        <div class="me-3"><i class="bi bi-person-circle fs-2 text-secondary"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="bg-light p-3 rounded-4 shadow-sm" style="display: inline-block; min-width: 40%; max-width: 100%;">
+                                <h6 class="fw-bold mb-1 text-primary">{{ comment.user.username }}</h6>
+                                <p class="mb-0 text-dark">{{ comment.content|linebreaksbr }}</p>
+                            </div>
+                            
+                            <div class="mt-1 ms-2 d-flex align-items-center gap-3" style="font-size: 0.9rem;">
+                                <a href="{% url 'like_comment' comment.id %}" class="text-decoration-none fw-bold {% if user in comment.likes.all %}text-primary{% else %}text-muted{% endif %}">
+                                    <i class="bi bi-hand-thumbs-up-fill"></i> Thích ({{ comment.total_likes }})
+                                </a>
+                                <a href="javascript:void(0);" onclick="toggleReply('reply-{{ comment.id }}')" class="text-decoration-none fw-bold text-muted">Phản hồi</a>
+                                <span class="text-muted" style="font-size: 0.85rem;">{{ comment.created_at|timesince }} trước</span>
+                                
+                                {% if user.is_staff %}
+                                <a href="{% url 'delete_comment' comment.id %}" class="text-danger text-decoration-none ms-auto" onclick="return confirm('Xóa bình luận này?');" title="Xóa bình luận">
+                                    <i class="bi bi-trash-fill"></i> Xóa
+                                </a>
+                                {% endif %}
+                            </div>
+
+                            <div id="reply-{{ comment.id }}" class="mt-2" style="display: none;">
+                                <form method="POST" class="d-flex mt-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                    <input type="text" name="content" class="form-control form-control-sm rounded-pill me-2" placeholder="Trả lời {{ comment.user.username }}..." required>
+                                    <button type="submit" class="btn btn-sm btn-primary rounded-pill"><i class="bi bi-send"></i></button>
+                                </form>
+                            </div>
+
+                            {% if comment.replies.all %}
+                            <div class="mt-3">
+                                {% for reply in comment.replies.all %}
+                                <div class="d-flex mb-3">
+                                    <div class="me-2"><i class="bi bi-person-circle fs-4 text-secondary"></i></div>
+                                    <div class="flex-grow-1">
+                                        <div class="bg-white border p-2 rounded-4" style="display: inline-block; min-width: 40%; max-width: 100%;">
+                                            <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.9rem;">{{ reply.user.username }}</h6>
+                                            <p class="mb-0 text-dark" style="font-size: 0.9rem;">{{ reply.content|linebreaksbr }}</p>
+                                        </div>
+                                        <div class="mt-1 ms-2 d-flex align-items-center gap-3" style="font-size: 0.8rem;">
+                                            <a href="{% url 'like_comment' reply.id %}" class="text-decoration-none fw-bold {% if user in reply.likes.all %}text-primary{% else %}text-muted{% endif %}">
+                                                <i class="bi bi-hand-thumbs-up-fill"></i> Thích ({{ reply.total_likes }})
+                                            </a>
+                                            <span class="text-muted">{{ reply.created_at|timesince }} trước</span>
+                                            {% if user.is_staff %}
+                                            <a href="{% url 'delete_comment' reply.id %}" class="text-danger text-decoration-none ms-auto" onclick="return confirm('Xóa phản hồi này?');">Xóa</a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-chat-dots fs-1"></i>
+                        <p class="mt-2">Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ suy nghĩ của bạn!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            </div>
     </div>
 </div>
+
+<script>
+    function toggleReply(id) {
+        var x = document.getElementById(id);
+        if (x.style.display === "none" || x.style.display === "") {
+            x.style.display = "block";
+        } else {
+            x.style.display = "none";
+        }
+    }
+</script>
 
 <style>
     .blog-content p {
